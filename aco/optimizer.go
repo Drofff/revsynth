@@ -27,3 +27,7 @@ type Optimizer struct {
 func NewOptimizer(conf Config) *Optimizer {
 	return &Optimizer{conf: conf}
 }
+
+func (o *Optimizer) Optimize(distances [][]float64) {
+
+}
