@@ -62,4 +62,9 @@ func TestTruthTable_ToVector(t *testing.T) {
 	if !equal([]int{1, 0, 0}, v.Inputs[4]) {
 		t.Errorf("invalid input %v", v.Inputs[4])
 	}
+
+	key := tt.Key()
+	if "[2 6 0 5 7 3 4 1]" != key {
+		t.Errorf("invalid key: %v", key)
+	}
 }

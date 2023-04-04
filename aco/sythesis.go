@@ -14,7 +14,9 @@ type Config struct {
 	// DepositStrength the strength of the pheromone deposit.
 	DepositStrength float64
 
-	LocalLoops  int
+	// LocalLoops defines number of leaps an ant makes attempting to get to the food (zero-state).
+	LocalLoops int
+	// SearchDepth defines number of gates an ant can use within a leap (local loop).
 	SearchDepth int
 }
 
@@ -29,17 +31,17 @@ type Synth struct {
 	conf Config
 }
 
-// Pheromones key is FromState and ToState combined into a string
+// Pheromones key is FromState and ToState combined into a string.
 type Pheromones map[string]PheromoneDeposit
 
 type PheromoneDeposit struct {
-	FromState       circuit.TruthVector
-	ToState         circuit.TruthVector
-	PheromoneAmount int
+	FromState       circuit.TruthTable
+	ToState         circuit.TruthTable
+	PheromoneAmount float64
 }
 
 type SynthesisResult struct {
-	TruthTable circuit.TruthTable
+	States     []circuit.TruthTable
 	Gates      []circuit.ToffoliGate
 	Complexity int
 }
@@ -59,8 +61,43 @@ func (s *Synth) selectGate(tt circuit.TruthTable, pheromones Pheromones) circuit
 	return circuit.ToffoliGate{}
 }
 
-func (s *Synth) updatePheromones(pheromones Pheromones) Pheromones {
-	// чим ближче ми добрались в турі до бажаного результату і чим менше при тому використали гейтів тим більше феромонів залишаємо
+func (s *Synth) depositPheromone(pheromones Pheromones, states []circuit.TruthTable, dist int) {
+	amount := s.conf.DepositStrength / float64(dist)
+
+	for i := 0; i < len(states)-1; i++ {
+		fromState := states[i]
+		toState := states[i+1]
+
+		linkKey := fromState.Key() + toState.Key()
+
+		pheromone, exists := pheromones[linkKey]
+		if !exists {
+			pheromone = PheromoneDeposit{FromState: fromState, ToState: toState, PheromoneAmount: 0}
+		}
+
+		gatePosition := len(states) - (i + 1) // position from end state, increases pheromone for gates closer to start state.
+
+		pheromone.PheromoneAmount += amount * float64(gatePosition)
+		pheromones[linkKey] = pheromone
+	}
+}
+
+func (s *Synth) updatePheromones(pheromones Pheromones, newDeposits Pheromones) {
+	for key, deposit := range pheromones {
+		deposit.PheromoneAmount *= 1.0 - s.conf.EvaporationRate
+		pheromones[key] = deposit
+	}
+
+	for key, newDeposit := range newDeposits {
+
+		deposit, exists := pheromones[key]
+		if !exists {
+			deposit = PheromoneDeposit{FromState: newDeposit.FromState, ToState: newDeposit.ToState, PheromoneAmount: 0}
+		}
+
+		deposit.PheromoneAmount += newDeposit.PheromoneAmount
+		pheromones[key] = deposit
+	}
 }
 
 // Synthesise uses desiredVector as a starting point and "zero-state" as the target state.
@@ -69,15 +106,19 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 	targetState := circuit.InitZeroTruthTable(desiredVector.Inputs)
 	pheromones := Pheromones{}
 
-	bestTruthTable := desiredVector.ToTable()
+	bestStates := make([]circuit.TruthTable, 0)
 	bestGates := make([]circuit.ToffoliGate, 0)
-	bestDist := CalcComplexity(bestTruthTable, targetState)
+	bestDist := CalcComplexity(desiredVector.ToTable(), targetState)
 
 	for iteration := 0; iteration < s.conf.NumOfIterations; iteration++ {
+
+		iterationDeposits := Pheromones{}
 
 		for ant := 0; ant < s.conf.NumOfAnts; ant++ {
 
 			tourTruthTable := desiredVector.ToTable().Copy()
+			tourStates := []circuit.TruthTable{tourTruthTable}
+
 			tourGates := make([]circuit.ToffoliGate, 0)
 			tourDist := CalcComplexity(tourTruthTable, targetState)
 
@@ -96,6 +137,9 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 
 				localTruthTable := tourTruthTable.Copy()
 				localTruthTable = circuit.UpdateTruthTable(localTruthTable, nextGate)
+				var localStates []circuit.TruthTable
+				copy(localStates, tourStates)
+				localStates = append(localStates, localTruthTable)
 
 				localDist := CalcComplexity(localTruthTable, targetState)
 
@@ -105,10 +149,12 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 
 					localGates = append(localGates, nextGate)
 					localTruthTable = circuit.UpdateTruthTable(localTruthTable, nextGate)
+					localStates = append(localStates, localTruthTable)
 					localDist = CalcComplexity(localTruthTable, targetState)
 
 					if localDist < tourDist {
 						tourTruthTable = localTruthTable
+						tourStates = localStates
 						tourGates = localGates
 						tourDist = localDist
 					}
@@ -117,17 +163,19 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 
 			}
 
+			s.depositPheromone(iterationDeposits, tourStates, tourDist)
+
 			if (tourDist < bestDist) || (tourDist == bestDist && len(tourGates) < len(bestGates)) {
-				bestTruthTable = tourTruthTable
+				bestStates = tourStates
 				bestGates = tourGates
 				bestDist = tourDist
 			}
 
 		}
 
-		pheromones = s.updatePheromones(pheromones)
+		s.updatePheromones(pheromones, iterationDeposits)
 
 	}
 
-	return SynthesisResult{TruthTable: bestTruthTable, Gates: bestGates, Complexity: bestDist}
+	return SynthesisResult{States: bestStates, Gates: bestGates, Complexity: bestDist}
 }

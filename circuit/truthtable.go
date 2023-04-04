@@ -1,5 +1,7 @@
 package circuit
 
+import "fmt"
+
 type TruthTable struct {
 	Rows []TruthTableRow
 }
@@ -53,6 +55,10 @@ func (tt TruthTable) ToVector() TruthVector {
 	return TruthVector{Inputs: ins, Vector: v}
 }
 
+func (tt TruthTable) Key() string {
+	return tt.ToVector().Key()
+}
+
 func (ttr TruthTableRow) Copy() TruthTableRow {
 	cin := make([]int, 0)
 	copy(cin, ttr.Input)
@@ -77,4 +83,8 @@ func (tv TruthVector) ToTable() TruthTable {
 	}
 
 	return tt
+}
+
+func (tv TruthVector) Key() string {
+	return fmt.Sprint(tv.Vector)
 }
