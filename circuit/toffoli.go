@@ -1,9 +1,5 @@
 package circuit
 
-type Gate interface {
-	TotalBitsCount() int
-}
-
 type ToffoliGate struct {
 	ControlBits []int
 	TargetBit   int
@@ -22,10 +18,6 @@ func (tg ToffoliGate) Apply(state []int) []int {
 	}
 
 	return state
-}
-
-func (tg ToffoliGate) TotalBitsCount() int {
-	return len(tg.ControlBits) + 1
 }
 
 func UpdateTruthTable(tt TruthTable, gate ToffoliGate) TruthTable {

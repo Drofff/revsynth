@@ -1,27 +1,24 @@
 package aco
 
-func maxMin(n1, n2 int) (int, int) {
-	if n1 > n2 {
-		return n1, n2
-	}
-	return n2, n1
-}
+import (
+	"log"
 
-func CalcComplexity(actualVector, desiredVector []int) int {
-	dist := 0
+	"drofff.com/revsynth/circuit"
+)
 
-	elCount := len(desiredVector)
+func CalcComplexity(actualState, desiredState circuit.TruthTable) int {
+	actualVector := actualState.ToVector().Vector
+	desiredVector := desiredState.ToVector().Vector
+
 	if len(actualVector) != len(desiredVector) {
-		maxL, minL := maxMin(len(actualVector), len(desiredVector))
-		dist += maxL - minL
-		elCount = minL
+		log.Fatalf("critical error, different table dimension: actual %v desired %v\n", len(actualVector), len(desiredVector))
 	}
 
-	for i := 0; i < elCount; i++ {
+	dist := 0
+	for i := 0; i < len(desiredVector); i++ {
 		if actualVector[i] != desiredVector[i] {
 			dist++
 		}
 	}
-
 	return dist
 }
