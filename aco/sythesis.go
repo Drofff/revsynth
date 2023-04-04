@@ -37,6 +37,7 @@ type Pheromones map[string]PheromoneDeposit
 type PheromoneDeposit struct {
 	FromState       circuit.TruthTable
 	ToState         circuit.TruthTable
+	UsedGate        circuit.ToffoliGate
 	PheromoneAmount float64
 }
 
@@ -50,18 +51,23 @@ func NewSynth(conf Config) *Synth {
 	return &Synth{conf: conf}
 }
 
-func (s *Synth) selectGate(tt circuit.TruthTable, pheromones Pheromones) circuit.ToffoliGate {
+func (s *Synth) selectTargetBit() int {
 
-	// check for each possible truth bit what pheromone + cost it is
-
-	// then same for control
-
-	// then build a gate using the selected bits above
-
-	return circuit.ToffoliGate{}
 }
 
-func (s *Synth) depositPheromone(pheromones Pheromones, states []circuit.TruthTable, dist int) {
+func (s *Synth) selectControlBits(targetBit int) []int {
+
+}
+
+func (s *Synth) selectGate(tt circuit.TruthTable, pheromones Pheromones) circuit.ToffoliGate {
+
+	targetBit := s.selectTargetBit()
+	controlBits := s.selectControlBits(targetBit)
+
+	return circuit.ToffoliGate{TargetBit: targetBit, ControlBits: controlBits}
+}
+
+func (s *Synth) depositPheromone(pheromones Pheromones, states []circuit.TruthTable, gates []circuit.ToffoliGate, dist int) {
 	amount := s.conf.DepositStrength / float64(dist)
 
 	for i := 0; i < len(states)-1; i++ {
@@ -72,7 +78,7 @@ func (s *Synth) depositPheromone(pheromones Pheromones, states []circuit.TruthTa
 
 		pheromone, exists := pheromones[linkKey]
 		if !exists {
-			pheromone = PheromoneDeposit{FromState: fromState, ToState: toState, PheromoneAmount: 0}
+			pheromone = PheromoneDeposit{FromState: fromState, ToState: toState, UsedGate: gates[i], PheromoneAmount: 0}
 		}
 
 		gatePosition := len(states) - (i + 1) // position from end state, increases pheromone for gates closer to start state.
@@ -92,7 +98,12 @@ func (s *Synth) updatePheromones(pheromones Pheromones, newDeposits Pheromones) 
 
 		deposit, exists := pheromones[key]
 		if !exists {
-			deposit = PheromoneDeposit{FromState: newDeposit.FromState, ToState: newDeposit.ToState, PheromoneAmount: 0}
+			deposit = PheromoneDeposit{
+				FromState:       newDeposit.FromState,
+				ToState:         newDeposit.ToState,
+				UsedGate:        newDeposit.UsedGate,
+				PheromoneAmount: 0,
+			}
 		}
 
 		deposit.PheromoneAmount += newDeposit.PheromoneAmount
@@ -163,7 +174,7 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 
 			}
 
-			s.depositPheromone(iterationDeposits, tourStates, tourDist)
+			s.depositPheromone(iterationDeposits, tourStates, tourGates, tourDist)
 
 			if (tourDist < bestDist) || (tourDist == bestDist && len(tourGates) < len(bestGates)) {
 				bestStates = tourStates
