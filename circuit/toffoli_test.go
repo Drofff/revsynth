@@ -29,9 +29,9 @@ func TestUpdateTruthTable(t *testing.T) {
 		{Input: []int{1, 1, 1}, Output: []int{0, 0, 1}},
 	}
 
-	tt1 := UpdateTruthTable(tt, ToffoliGate{ControlBits: []int{2}, TargetBit: 0})
-	tt2 := UpdateTruthTable(tt1, ToffoliGate{ControlBits: []int{}, TargetBit: 1})
-	tt3 := UpdateTruthTable(tt2, ToffoliGate{ControlBits: []int{0, 1}, TargetBit: 2})
+	tt1 := UpdateTruthTable(tt, ToffoliGate{ControlBits: []int{2, 2, 0}, TargetBit: 0})
+	tt2 := UpdateTruthTable(tt1, ToffoliGate{ControlBits: []int{2, 2, 2}, TargetBit: 1})
+	tt3 := UpdateTruthTable(tt2, ToffoliGate{ControlBits: []int{0, 0, 2}, TargetBit: 2})
 
 	for i := range expectedResult {
 		if !equal(expectedResult[i].Input, tt3.Rows[i].Input) {

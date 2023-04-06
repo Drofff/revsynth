@@ -95,13 +95,13 @@ func (s *Synth) selectTargetBit(desiredState circuit.TruthTable, tt circuit.Trut
 	return chooseRand(tbProbabilities)
 }
 
-func (s *Synth) selectControlBits(targetBit int) []int {
+func (s *Synth) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) []int {
 
 }
 
 func (s *Synth) selectGate(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.ToffoliGate {
 	targetBit := s.selectTargetBit(desiredState, tt, pheromones)
-	controlBits := s.selectControlBits(targetBit)
+	controlBits := s.selectControlBits(desiredState, tt, pheromones, targetBit)
 	return circuit.ToffoliGate{TargetBit: targetBit, ControlBits: controlBits}
 }
 
