@@ -1,6 +1,8 @@
 package aco
 
 import (
+	"math/rand"
+
 	"drofff.com/revsynth/circuit"
 )
 
@@ -66,14 +68,13 @@ func (s *Synth) selectTargetBit(desiredState circuit.TruthTable, tt circuit.Trut
 	}
 
 	weightsSum := sumFloat64(tbWeights)
+	if weightsSum == 0.0 {
+		return rand.Intn(len(tt.Rows[0].Input))
+	}
 
 	tbProbabilities := make([]float64, 0)
 	for _, tbWeight := range tbWeights {
-		tbProb := 0.0
-		if weightsSum > 0 {
-			tbProb = tbWeight / weightsSum
-		}
-		tbProbabilities = append(tbProbabilities, tbProb)
+		tbProbabilities = append(tbProbabilities, tbWeight/weightsSum)
 	}
 
 	return chooseRand(tbProbabilities)
@@ -115,14 +116,14 @@ func (s *Synth) selectControlBits(desiredState circuit.TruthTable, tt circuit.Tr
 		}
 
 		weightsSum := sumFloat64(cbWeights)
+		if weightsSum == 0.0 {
+			controlBits = append(controlBits, controlBitValues[rand.Intn(len(controlBitValues))])
+			continue
+		}
 
 		cbValueProbs := make([]float64, 0)
 		for _, cbWeight := range cbWeights {
-			cbValueProb := 0.0
-			if weightsSum > 0 {
-				cbValueProb = cbWeight / weightsSum
-			}
-			cbValueProbs = append(cbValueProbs, cbValueProb)
+			cbValueProbs = append(cbValueProbs, cbWeight/weightsSum)
 		}
 
 		controlBits = append(controlBits, chooseRand(cbValueProbs))

@@ -14,13 +14,21 @@ func sumFloat64(nums []float64) float64 {
 }
 
 func probToInt(prob float64) int {
-	return int(prob * 100000.0)
+	if prob < 0.0001 {
+		return 1
+	}
+
+	return int(prob * 10000)
 }
 
 func chooseRand(probs []float64) int {
 	probsSum := 0
 	for _, prob := range probs {
 		probsSum += probToInt(prob)
+	}
+
+	if probsSum == 0 {
+		log.Fatalln("probabilities sum must not be 0:", probs)
 	}
 
 	selector := rand.Intn(probsSum)
