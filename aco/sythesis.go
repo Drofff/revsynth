@@ -49,6 +49,8 @@ type SynthesisResult struct {
 	Complexity int
 }
 
+var controlBitValues = []int{circuit.ControlBitPositive, circuit.ControlBitNegative, circuit.ControlBitIgnore}
+
 func NewSynth(conf Config) *Synth {
 	return &Synth{conf: conf}
 }
@@ -95,8 +97,55 @@ func (s *Synth) selectTargetBit(desiredState circuit.TruthTable, tt circuit.Trut
 	return chooseRand(tbProbabilities)
 }
 
-func (s *Synth) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) []int {
+func (s *Synth) calcControlBitWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int, cb int, cbValue int) float64 {
+	pheromonesSum := 0.0
+	bestComplexity := 0
+	setComplexity := false
 
+	for _, pheromone := range pheromones {
+		if pheromone.FromState.Equal(tt) && pheromone.UsedGate.TargetBit == tb && pheromone.UsedGate.ControlBits[cb] == cbValue {
+			pheromonesSum += pheromone.PheromoneAmount
+
+			complexity := CalcComplexity(pheromone.ToState, desiredState)
+			if !setComplexity {
+				bestComplexity = complexity
+				setComplexity = true
+			} else if complexity < bestComplexity {
+				bestComplexity = complexity
+			}
+		}
+	}
+
+	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
+}
+
+func (s *Synth) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) []int {
+	controlBits := make([]int, 0)
+	for cb := 0; cb < len(tt.Rows[0].Input); cb++ {
+		if cb == tb {
+			controlBits = append(controlBits, circuit.ControlBitIgnore)
+			continue
+		}
+
+		cbWeights := make([]float64, 0)
+		for _, cbValue := range controlBitValues {
+			cbWeights = append(cbWeights, s.calcControlBitWeight(desiredState, tt, pheromones, tb, cb, cbValue))
+		}
+
+		weightsSum := sumFloat64(cbWeights)
+
+		cbValueProbs := make([]float64, 0)
+		for _, cbWeight := range cbWeights {
+			cbValueProb := 0.0
+			if weightsSum > 0 {
+				cbValueProb = cbWeight / weightsSum
+			}
+			cbValueProbs = append(cbValueProbs, cbValueProb)
+		}
+
+		controlBits = append(controlBits, chooseRand(cbValueProbs))
+	}
+	return controlBits
 }
 
 func (s *Synth) selectGate(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.ToffoliGate {
@@ -178,7 +227,7 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 					break
 				}
 
-				nextGate := s.selectGate(tourTruthTable, pheromones)
+				nextGate := s.selectGate(targetState, tourTruthTable, pheromones)
 
 				var localGates []circuit.ToffoliGate
 				copy(localGates, tourGates)
@@ -194,7 +243,7 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 
 				for depth := 0; depth < s.conf.SearchDepth; depth++ {
 
-					nextGate := s.selectGate(localTruthTable, pheromones)
+					nextGate := s.selectGate(targetState, localTruthTable, pheromones)
 
 					localGates = append(localGates, nextGate)
 					localTruthTable = circuit.UpdateTruthTable(localTruthTable, nextGate)
