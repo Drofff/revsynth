@@ -59,6 +59,10 @@ func (tt TruthTable) Key() string {
 	return tt.ToVector().Key()
 }
 
+func (tt TruthTable) Equal(otherTt TruthTable) bool {
+	return tt.ToVector().Equal(otherTt.ToVector())
+}
+
 func (ttr TruthTableRow) Copy() TruthTableRow {
 	cin := make([]int, 0)
 	copy(cin, ttr.Input)
@@ -87,4 +91,8 @@ func (tv TruthVector) ToTable() TruthTable {
 
 func (tv TruthVector) Key() string {
 	return fmt.Sprint(tv.Vector)
+}
+
+func (tv TruthVector) Equal(otherTv TruthVector) bool {
+	return equal(tv.Vector, otherTv.Vector)
 }

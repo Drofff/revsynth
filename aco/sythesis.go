@@ -1,6 +1,8 @@
 package aco
 
-import "drofff.com/revsynth/circuit"
+import (
+	"drofff.com/revsynth/circuit"
+)
 
 type Config struct {
 	NumOfAnts       int
@@ -51,19 +53,55 @@ func NewSynth(conf Config) *Synth {
 	return &Synth{conf: conf}
 }
 
-func (s *Synth) selectTargetBit() int {
+func (s *Synth) calcTargetBitWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) float64 {
+	pheromonesSum := 0.0
+	bestComplexity := 0
+	setComplexity := false
 
+	for _, pheromone := range pheromones {
+		if pheromone.FromState.Equal(tt) && pheromone.UsedGate.TargetBit == tb {
+			pheromonesSum += pheromone.PheromoneAmount
+
+			complexity := CalcComplexity(pheromone.ToState, desiredState)
+			if !setComplexity {
+				bestComplexity = complexity
+				setComplexity = true
+			} else if complexity < bestComplexity {
+				bestComplexity = complexity
+			}
+		}
+	}
+
+	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
+}
+
+func (s *Synth) selectTargetBit(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) int {
+	tbWeights := make([]float64, 0)
+	for tbVal := 0; tbVal < len(tt.Rows[0].Input); tbVal++ {
+		tbWeights = append(tbWeights, s.calcTargetBitWeight(desiredState, tt, pheromones, tbVal))
+	}
+
+	weightsSum := sumFloat64(tbWeights)
+
+	tbProbabilities := make([]float64, 0)
+	for _, tbWeight := range tbWeights {
+		tbProb := 0.0
+		if weightsSum > 0 {
+			tbProb = tbWeight / weightsSum
+		}
+		tbProbabilities = append(tbProbabilities, tbProb)
+	}
+
+	return chooseRand(tbProbabilities)
 }
 
 func (s *Synth) selectControlBits(targetBit int) []int {
 
 }
 
-func (s *Synth) selectGate(tt circuit.TruthTable, pheromones Pheromones) circuit.ToffoliGate {
-
-	targetBit := s.selectTargetBit()
+func (s *Synth) selectGate(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.ToffoliGate {
+	targetBit := s.selectTargetBit(desiredState, tt, pheromones)
 	controlBits := s.selectControlBits(targetBit)
-
 	return circuit.ToffoliGate{TargetBit: targetBit, ControlBits: controlBits}
 }
 
