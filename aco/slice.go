@@ -9,5 +9,5 @@ func sumFloat64(nums []float64) float64 {
 }
 
 func chooseRand(probs []float64) int {
-	// TODO
+	return -1
 }
