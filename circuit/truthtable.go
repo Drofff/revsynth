@@ -25,11 +25,11 @@ func InitZeroTruthTable(inputs [][]int) TruthTable {
 }
 
 func (tt TruthTable) Copy() TruthTable {
-	ctt := TruthTable{Rows: make([]TruthTableRow, 0)}
+	cRows := make([]TruthTableRow, 0)
 	for _, row := range tt.Rows {
-		ctt.Rows = append(ctt.Rows, row.Copy())
+		cRows = append(cRows, row.Copy())
 	}
-	return ctt
+	return TruthTable{Rows: cRows}
 }
 
 func (tt TruthTable) ToVector() TruthVector {
@@ -64,9 +64,9 @@ func (tt TruthTable) Equal(otherTt TruthTable) bool {
 }
 
 func (ttr TruthTableRow) Copy() TruthTableRow {
-	cin := make([]int, 0)
+	cin := make([]int, len(ttr.Input))
 	copy(cin, ttr.Input)
-	cout := make([]int, 0)
+	cout := make([]int, len(ttr.Output))
 	copy(cout, ttr.Output)
 	return TruthTableRow{Input: cin, Output: cout}
 }

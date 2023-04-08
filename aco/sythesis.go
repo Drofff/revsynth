@@ -212,13 +212,13 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 
 				nextGate := s.selectGate(targetState, tourTruthTable, pheromones)
 
-				var localGates []circuit.ToffoliGate
+				localGates := make([]circuit.ToffoliGate, len(tourGates))
 				copy(localGates, tourGates)
 				localGates = append(localGates, nextGate)
 
 				localTruthTable := tourTruthTable.Copy()
 				localTruthTable = circuit.UpdateTruthTable(localTruthTable, nextGate)
-				var localStates []circuit.TruthTable
+				localStates := make([]circuit.TruthTable, len(tourStates))
 				copy(localStates, tourStates)
 				localStates = append(localStates, localTruthTable)
 
