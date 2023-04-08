@@ -240,9 +240,11 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 					localDist = CalcComplexity(localTruthTable, targetState)
 
 					if localDist < tourDist {
+						localStatesOpt, localGatesOpt := circuit.Trim(localStates, localGates)
+
 						tourTruthTable = localTruthTable
-						tourStates = localStates
-						tourGates = localGates
+						tourStates = localStatesOpt
+						tourGates = localGatesOpt
 						tourDist = localDist
 					}
 
@@ -261,6 +263,8 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 		}
 
 		s.updatePheromones(pheromones, iterationDeposits)
+
+		s.conf.Logger.LogInfo(".")
 
 	}
 

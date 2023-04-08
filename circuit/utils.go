@@ -72,18 +72,18 @@ func CutLoops(circuit [][]int) [][]int {
 
 // Trim removes redundant operations after the final result has been found for the first time.
 // f.e. "A -> B -> C -> D -> B" will turn into "A -> B"
-func Trim(circuit [][]int) [][]int {
-	finalEl := circuit[len(circuit)-1]
+func Trim(states []TruthTable, gates []ToffoliGate) ([]TruthTable, []ToffoliGate) {
+	finalVector := states[len(states)-1].ToVector().Vector
 
 	trimTo := -1
-	for i := 0; i < len(circuit)-1; i++ {
-		if equal(circuit[i], finalEl) {
+	for i := 0; i < len(states)-1; i++ {
+		if equal(finalVector, states[i].ToVector().Vector) {
 			trimTo = i + 1
 		}
 	}
 
 	if trimTo >= 0 {
-		return circuit[:trimTo]
+		return states[:trimTo], gates[:trimTo]
 	}
-	return circuit
+	return states, gates
 }

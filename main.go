@@ -21,10 +21,11 @@ func main() {
 		LocalLoops:  10,
 		SearchDepth: 15,
 
-		Logger: logging.NewLogger(logging.LevelDebug),
+		Logger: logging.NewLogger(logging.LevelInfo),
 	}
 	synth := aco.NewSynth(conf)
 
+	fmt.Println("Running synthesis..")
 	startedAt := time.Now().UnixMilli()
 	desiredVector := circuit.TruthVector{Inputs: [][]int{
 		{0, 0, 0},
@@ -39,5 +40,8 @@ func main() {
 	res := synth.Synthesise(desiredVector)
 
 	processingTime := time.Now().UnixMilli() - startedAt
-	fmt.Printf("Result complexity = %v, processing time %v millis\n", res.Complexity, processingTime)
+
+	fmt.Println("==========================")
+	fmt.Printf("Processing time: %v millis\n", processingTime)
+	fmt.Printf("Result:\n  Complexity=%v\n  NumOfGates=%v\n", res.Complexity, len(res.Gates))
 }
