@@ -2,25 +2,30 @@ package main
 
 import (
 	"fmt"
+	"time"
 
 	"drofff.com/revsynth/aco"
 	"drofff.com/revsynth/circuit"
+	"drofff.com/revsynth/logging"
 )
 
 func main() {
 	conf := aco.Config{
 		NumOfAnts:       20,
-		NumOfIterations: 100,
-		Alpha:           1.5,
-		Beta:            2.0,
+		NumOfIterations: 10,
+		Alpha:           2.0,
+		Beta:            1.0,
 		EvaporationRate: 0.5,
 		DepositStrength: 100,
 
-		LocalLoops:  15,
-		SearchDepth: 10,
+		LocalLoops:  10,
+		SearchDepth: 15,
+
+		Logger: logging.NewLogger(logging.LevelDebug),
 	}
 	synth := aco.NewSynth(conf)
 
+	startedAt := time.Now().UnixMilli()
 	desiredVector := circuit.TruthVector{Inputs: [][]int{
 		{0, 0, 0},
 		{0, 0, 1},
@@ -32,5 +37,7 @@ func main() {
 		{1, 1, 1},
 	}, Vector: []int{1, 0, 3, 2, 5, 7, 4, 6}}
 	res := synth.Synthesise(desiredVector)
-	fmt.Printf("Result complexity = %v\n", res.Complexity)
+
+	processingTime := time.Now().UnixMilli() - startedAt
+	fmt.Printf("Result complexity = %v, processing time %v millis\n", res.Complexity, processingTime)
 }

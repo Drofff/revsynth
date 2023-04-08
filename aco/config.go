@@ -1,5 +1,7 @@
 package aco
 
+import "drofff.com/revsynth/logging"
+
 type Config struct {
 	NumOfAnts       int
 	NumOfIterations int
@@ -16,4 +18,6 @@ type Config struct {
 	LocalLoops int
 	// SearchDepth defines number of gates an ant can use within a leap (local loop).
 	SearchDepth int
+
+	Logger logging.Logger
 }

@@ -191,11 +191,17 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 	bestGates := make([]circuit.ToffoliGate, 0)
 	bestDist := CalcComplexity(desiredVector.ToTable(), targetState)
 
+	s.conf.Logger.LogDebug("initial state defined..")
+
 	for iteration := 0; iteration < s.conf.NumOfIterations; iteration++ {
+
+		s.conf.Logger.LogDebug("iteration %v", iteration+1)
 
 		iterationDeposits := Pheromones{}
 
 		for ant := 0; ant < s.conf.NumOfAnts; ant++ {
+
+			s.conf.Logger.LogDebug("ant %v", ant+1)
 
 			tourTruthTable := desiredVector.ToTable().Copy()
 			tourStates := []circuit.TruthTable{tourTruthTable}
