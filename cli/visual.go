@@ -58,15 +58,15 @@ func DrawCircuit(inputsCount int, gates []circuit.ToffoliGate) {
 	for i := 0; i < inputsCount; i++ {
 		line := fmt.Sprintf("x%v --", i+1)
 
+		bit := inputsCount - i - 1
 		for gateIndex := len(gates) - 1; gateIndex >= 0; gateIndex-- {
 			gate := gates[gateIndex]
-
-			if gate.TargetBit == i {
+			if gate.TargetBit == bit {
 				line += "o--"
-			} else if gate.ControlBits[i] == 0 {
-				line += "x--"
-			} else if gate.ControlBits[i] == 1 {
-				line += "X--"
+			} else if gate.ControlBits[bit] == 0 {
+				line += "p--"
+			} else if gate.ControlBits[bit] == 1 {
+				line += "n--"
 			} else {
 				line += "---"
 			}
@@ -75,5 +75,5 @@ func DrawCircuit(inputsCount int, gates []circuit.ToffoliGate) {
 		fmt.Println(line)
 	}
 
-	fmt.Println("\nLegend: x - positive control, X - negative control, o - target bit")
+	fmt.Println("\nLegend: p - positive control, n - negative control, o - target bit")
 }

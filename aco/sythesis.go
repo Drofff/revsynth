@@ -138,7 +138,12 @@ func (s *Synth) selectGate(desiredState circuit.TruthTable, tt circuit.TruthTabl
 }
 
 func (s *Synth) depositPheromone(pheromones Pheromones, states []circuit.TruthTable, gates []circuit.ToffoliGate, dist int) {
-	amount := s.conf.DepositStrength / float64(dist)
+	var amount float64
+	if dist == 0 {
+		amount = s.conf.DepositStrength
+	} else {
+		amount = s.conf.DepositStrength / float64(dist)
+	}
 
 	for i := 0; i < len(states)-1; i++ {
 		fromState := states[i]

@@ -12,15 +12,15 @@ import (
 
 func main() {
 	conf := aco.Config{
-		NumOfAnts:       20,
-		NumOfIterations: 10,
+		NumOfAnts:       30,
+		NumOfIterations: 15,
 		Alpha:           2.0,
 		Beta:            1.0,
 		EvaporationRate: 0.5,
 		DepositStrength: 100,
 
-		LocalLoops:  10,
-		SearchDepth: 15,
+		LocalLoops:  4,
+		SearchDepth: 6,
 
 		Logger: logging.NewLogger(logging.LevelInfo),
 	}
