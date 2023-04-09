@@ -18,14 +18,14 @@ type loop struct {
 	end   int
 }
 
-func detectLoops(circuit [][]int) []loop {
+func detectLoops(states []TruthTable) []loop {
 	loops := make([]loop, 0)
-	for i := 0; i < len(circuit); i++ {
+	for i := 0; i < len(states); i++ {
 		start := -1
 		end := -1
 
-		for j := 0; j < len(circuit); j++ {
-			if equal(circuit[i], circuit[j]) {
+		for j := 0; j < len(states); j++ {
+			if equal(states[i].ToVector().Vector, states[j].ToVector().Vector) {
 				if start < 0 {
 					start = j
 					continue
@@ -34,40 +34,49 @@ func detectLoops(circuit [][]int) []loop {
 			}
 		}
 
-		if end >= 0 {
+		if end > 0 {
 			loops = append(loops, loop{start: start, end: end})
 		}
 	}
 	return loops
 }
 
-func removeLoops(circuit [][]int, loops []loop) [][]int {
-	markedCircuit := make([][]int, len(circuit))
-	copy(markedCircuit, circuit)
+func removeLoops(states []TruthTable, gates []ToffoliGate, loops []loop) ([]TruthTable, []ToffoliGate) {
+	markedStates := make([]TruthTable, len(states))
+	copy(markedStates, states)
+	markedGates := make([]ToffoliGate, len(gates))
+	copy(markedGates, gates)
 
 	for _, loop := range loops {
 		for i := loop.start; i < loop.end; i++ {
-			markedCircuit[i] = nil
+			markedStates[i] = TruthTable{Rows: nil}
+			markedGates[i] = ToffoliGate{TargetBit: -1}
 		}
 	}
 
-	updatedCircuit := make([][]int, 0)
-	for _, el := range markedCircuit {
-		if el != nil {
-			updatedCircuit = append(updatedCircuit, el)
+	updatedStates := make([]TruthTable, 0)
+	updatedGates := make([]ToffoliGate, 0)
+	for i := 0; i < len(markedStates); i++ {
+		if markedStates[i].Rows != nil {
+			updatedStates = append(updatedStates, markedStates[i])
+		}
+
+		if i < len(markedStates)-1 && markedGates[i].TargetBit != -1 {
+			updatedGates = append(updatedGates, markedGates[i])
 		}
 	}
-	return updatedCircuit
+
+	return updatedStates, updatedGates
 }
 
 // CutLoops detects and removes unnecessary operations that lead back to the state circuit already had.
 // f.e. "A -> B -> C -> D -> B -> E -> F" will be simplified to "A -> B -> E -> F"
-func CutLoops(circuit [][]int) [][]int {
-	loops := detectLoops(circuit)
+func CutLoops(states []TruthTable, gates []ToffoliGate) ([]TruthTable, []ToffoliGate) {
+	loops := detectLoops(states)
 	if len(loops) > 0 {
-		return removeLoops(circuit, loops)
+		return removeLoops(states, gates, loops)
 	}
-	return circuit
+	return states, gates
 }
 
 // Trim removes redundant operations after the final result has been found for the first time.
@@ -83,7 +92,7 @@ func Trim(states []TruthTable, gates []ToffoliGate) ([]TruthTable, []ToffoliGate
 	}
 
 	if trimTo >= 0 {
-		return states[:trimTo], gates[:trimTo]
+		return states[:trimTo], gates[:trimTo-1]
 	}
 	return states, gates
 }

@@ -241,6 +241,7 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 
 					if localDist < tourDist {
 						localStatesOpt, localGatesOpt := circuit.Trim(localStates, localGates)
+						localStatesOpt, localGatesOpt = circuit.CutLoops(localStatesOpt, localGatesOpt)
 
 						tourTruthTable = localTruthTable
 						tourStates = localStatesOpt
@@ -255,8 +256,10 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 			s.depositPheromone(iterationDeposits, tourStates, tourGates, tourDist)
 
 			if (tourDist < bestDist) || (tourDist == bestDist && len(tourGates) < len(bestGates)) {
-				bestStates = tourStates
-				bestGates = tourGates
+				tourStatesOpt, tourGatesOpt := circuit.CutLoops(tourStates, tourGates)
+
+				bestStates = tourStatesOpt
+				bestGates = tourGatesOpt
 				bestDist = tourDist
 			}
 
