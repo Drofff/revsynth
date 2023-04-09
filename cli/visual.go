@@ -21,6 +21,7 @@ func printRowDelim(insCount int) {
 	})
 }
 
+// DrawTruthTable is sometimes useful for debugging.
 func DrawTruthTable(tt circuit.TruthTable) {
 	insCount := len(tt.Rows[0].Input)
 	printRowDelim(insCount)
@@ -57,7 +58,9 @@ func DrawCircuit(inputsCount int, gates []circuit.ToffoliGate) {
 	for i := 0; i < inputsCount; i++ {
 		line := fmt.Sprintf("x%v --", i+1)
 
-		for _, gate := range gates {
+		for gateIndex := len(gates) - 1; gateIndex >= 0; gateIndex-- {
+			gate := gates[gateIndex]
+
 			if gate.TargetBit == i {
 				line += "o--"
 			} else if gate.ControlBits[i] == 0 {

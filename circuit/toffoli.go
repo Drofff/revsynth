@@ -14,6 +14,9 @@ const (
 )
 
 func (tg ToffoliGate) Apply(state []int) []int {
+	updatedState := make([]int, len(state))
+	copy(updatedState, state)
+
 	invert := true
 	for controlBit, bitMode := range tg.ControlBits {
 		switch bitMode {
@@ -33,10 +36,10 @@ func (tg ToffoliGate) Apply(state []int) []int {
 	}
 
 	if invert {
-		state[tg.TargetBit] = (state[tg.TargetBit] + 1) % 2
+		updatedState[tg.TargetBit] = (state[tg.TargetBit] + 1) % 2
 	}
 
-	return state
+	return updatedState
 }
 
 func UpdateTruthTable(tt TruthTable, gate ToffoliGate) TruthTable {
