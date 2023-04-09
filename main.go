@@ -47,5 +47,7 @@ func main() {
 	fmt.Printf("Result:\n  Complexity=%v\n  NumOfGates=%v\n", res.Complexity, len(res.Gates))
 	fmt.Print("\n\n")
 
+	cli.DrawTruthTable(res.States[len(res.States)-1])
+	fmt.Print("\n\n")
 	cli.DrawCircuit(len(desiredVector.Inputs[0]), res.Gates)
 }

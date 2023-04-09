@@ -6,6 +6,52 @@ import (
 	"drofff.com/revsynth/circuit"
 )
 
+func printRow(printFunc func()) {
+	fmt.Print("|")
+	printFunc()
+	fmt.Print("|\n")
+}
+
+func printRowDelim(insCount int) {
+	printRow(func() {
+		for i := 0; i < insCount; i++ {
+			fmt.Print("--------")
+		}
+		fmt.Printf("-")
+	})
+}
+
+func DrawTruthTable(tt circuit.TruthTable) {
+	insCount := len(tt.Rows[0].Input)
+	printRowDelim(insCount)
+
+	printRow(func() {
+		for i := 0; i < insCount; i++ {
+			fmt.Printf(" x%v ", i+1)
+		}
+		fmt.Print("|")
+		for i := 0; i < insCount; i++ {
+			fmt.Printf(" y%v ", i+1)
+		}
+	})
+
+	printRowDelim(insCount)
+
+	for i := 0; i < len(tt.Rows); i++ {
+		printRow(func() {
+			for in := 0; in < insCount; in++ {
+				fmt.Printf(" %v  ", tt.Rows[i].Input[in])
+			}
+			fmt.Print("|")
+			for out := 0; out < insCount; out++ {
+				fmt.Printf(" %v  ", tt.Rows[i].Output[out])
+			}
+		})
+	}
+
+	printRowDelim(insCount)
+}
+
 func DrawCircuit(inputsCount int, gates []circuit.ToffoliGate) {
 
 	for i := 0; i < inputsCount; i++ {
