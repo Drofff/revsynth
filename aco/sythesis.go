@@ -4,22 +4,18 @@ import (
 	"math/rand"
 
 	"drofff.com/revsynth/circuit"
+	"drofff.com/revsynth/logging"
 )
 
-type AntTour struct {
-	// Path is an ordered list of nodes ant went through.
-	Path []int
-	// Length defines distance (cost) of the Path.
-	Length float64
-}
-
-type Synth struct {
+type Synthesizer struct {
 	conf Config
+	log  logging.Logger
 }
 
-// Pheromones key is FromState and ToState combined into a string.
+// Pheromones key - `FromState` and `ToState` concatenated into a string.
 type Pheromones map[string]PheromoneDeposit
 
+// PheromoneDeposit represents pheromone left by an ant on an edge between two states (truth tables).
 type PheromoneDeposit struct {
 	FromState       circuit.TruthTable
 	ToState         circuit.TruthTable
@@ -28,18 +24,21 @@ type PheromoneDeposit struct {
 }
 
 type SynthesisResult struct {
-	States     []circuit.TruthTable
-	Gates      []circuit.ToffoliGate
+	// Complexity is a distance between the last achieved state and zero func.
 	Complexity int
+	// States contains all truth table changes of each Gates including the (initial) desired truth table
+	// and the closest func to zero func that was reached (or maybe even zero func itself).
+	States []circuit.TruthTable
+	// Gates sequentially transforming the desired truth table to zero func truth table.
+	// Please reverse this list before building a circuit.
+	Gates []circuit.ToffoliGate
 }
 
-var controlBitValues = []int{circuit.ControlBitPositive, circuit.ControlBitNegative, circuit.ControlBitIgnore}
-
-func NewSynth(conf Config) *Synth {
-	return &Synth{conf: conf}
+func NewSynthesizer(conf Config, log logging.Logger) *Synthesizer {
+	return &Synthesizer{conf: conf, log: log}
 }
 
-func (s *Synth) calcTargetBitWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) float64 {
+func (s *Synthesizer) calcTargetBitWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) float64 {
 	pheromonesSum := 0.0
 	bestComplexity := 0
 	setComplexity := false
@@ -61,7 +60,7 @@ func (s *Synth) calcTargetBitWeight(desiredState circuit.TruthTable, tt circuit.
 	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
 }
 
-func (s *Synth) selectTargetBit(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) int {
+func (s *Synthesizer) selectTargetBit(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) int {
 	tbWeights := make([]float64, 0)
 	for tbVal := 0; tbVal < len(tt.Rows[0].Input); tbVal++ {
 		tbWeights = append(tbWeights, s.calcTargetBitWeight(desiredState, tt, pheromones, tbVal))
@@ -80,7 +79,7 @@ func (s *Synth) selectTargetBit(desiredState circuit.TruthTable, tt circuit.Trut
 	return chooseRand(tbProbabilities)
 }
 
-func (s *Synth) calcControlBitWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int, cb int, cbValue int) float64 {
+func (s *Synthesizer) calcControlBitWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int, cb int, cbValue int) float64 {
 	pheromonesSum := 0.0
 	bestComplexity := 0
 	setComplexity := false
@@ -102,7 +101,7 @@ func (s *Synth) calcControlBitWeight(desiredState circuit.TruthTable, tt circuit
 	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
 }
 
-func (s *Synth) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) []int {
+func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) []int {
 	controlBits := make([]int, 0)
 	for cb := 0; cb < len(tt.Rows[0].Input); cb++ {
 		if cb == tb {
@@ -111,13 +110,13 @@ func (s *Synth) selectControlBits(desiredState circuit.TruthTable, tt circuit.Tr
 		}
 
 		cbWeights := make([]float64, 0)
-		for _, cbValue := range controlBitValues {
+		for _, cbValue := range circuit.ControlBitValues {
 			cbWeights = append(cbWeights, s.calcControlBitWeight(desiredState, tt, pheromones, tb, cb, cbValue))
 		}
 
 		weightsSum := sumFloat64(cbWeights)
 		if weightsSum == 0.0 {
-			controlBits = append(controlBits, controlBitValues[rand.Intn(len(controlBitValues))])
+			controlBits = append(controlBits, circuit.ControlBitValues[rand.Intn(len(circuit.ControlBitValues))])
 			continue
 		}
 
@@ -131,13 +130,13 @@ func (s *Synth) selectControlBits(desiredState circuit.TruthTable, tt circuit.Tr
 	return controlBits
 }
 
-func (s *Synth) selectGate(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.ToffoliGate {
+func (s *Synthesizer) selectGate(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.ToffoliGate {
 	targetBit := s.selectTargetBit(desiredState, tt, pheromones)
 	controlBits := s.selectControlBits(desiredState, tt, pheromones, targetBit)
 	return circuit.ToffoliGate{TargetBit: targetBit, ControlBits: controlBits}
 }
 
-func (s *Synth) depositPheromone(pheromones Pheromones, states []circuit.TruthTable, gates []circuit.ToffoliGate, dist int) {
+func (s *Synthesizer) depositPheromone(pheromones Pheromones, states []circuit.TruthTable, gates []circuit.ToffoliGate, dist int) {
 	var amount float64
 	if dist == 0 {
 		amount = s.conf.DepositStrength
@@ -163,7 +162,7 @@ func (s *Synth) depositPheromone(pheromones Pheromones, states []circuit.TruthTa
 	}
 }
 
-func (s *Synth) updatePheromones(pheromones Pheromones, newDeposits Pheromones) {
+func (s *Synthesizer) updatePheromones(pheromones Pheromones, newDeposits Pheromones) {
 	for key, deposit := range pheromones {
 		deposit.PheromoneAmount *= 1.0 - s.conf.EvaporationRate
 		pheromones[key] = deposit
@@ -187,7 +186,7 @@ func (s *Synth) updatePheromones(pheromones Pheromones, newDeposits Pheromones) 
 }
 
 // Synthesise uses desiredVector as a starting point and "zero-state" as the target state.
-func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
+func (s *Synthesizer) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 
 	targetState := circuit.InitZeroTruthTable(desiredVector.Inputs)
 	pheromones := Pheromones{}
@@ -196,17 +195,17 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 	bestGates := make([]circuit.ToffoliGate, 0)
 	bestDist := CalcComplexity(desiredVector.ToTable(), targetState)
 
-	s.conf.Logger.LogDebug("initial state defined..")
+	s.log.LogDebug("initial state defined..")
 
 	for iteration := 0; iteration < s.conf.NumOfIterations; iteration++ {
 
-		s.conf.Logger.LogDebug("iteration %v", iteration+1)
+		s.log.LogDebug("iteration %v", iteration+1)
 
 		iterationDeposits := Pheromones{}
 
 		for ant := 0; ant < s.conf.NumOfAnts; ant++ {
 
-			s.conf.Logger.LogDebug("ant %v", ant+1)
+			s.log.LogDebug("ant %v", ant+1)
 
 			tourTruthTable := desiredVector.ToTable().Copy()
 			tourStates := []circuit.TruthTable{tourTruthTable}
@@ -272,7 +271,7 @@ func (s *Synth) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 
 		s.updatePheromones(pheromones, iterationDeposits)
 
-		s.conf.Logger.LogInfo(".")
+		s.log.LogInfo(".")
 
 	}
 

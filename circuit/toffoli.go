@@ -13,6 +13,8 @@ const (
 	ControlBitIgnore   = 2
 )
 
+var ControlBitValues = []int{ControlBitPositive, ControlBitNegative, ControlBitIgnore}
+
 func (tg ToffoliGate) Apply(state []int) []int {
 	updatedState := make([]int, len(state))
 	copy(updatedState, state)

@@ -21,10 +21,8 @@ func main() {
 
 		LocalLoops:  4,
 		SearchDepth: 6,
-
-		Logger: logging.NewLogger(logging.LevelInfo),
 	}
-	synth := aco.NewSynth(conf)
+	synth := aco.NewSynthesizer(conf, logging.NewLogger(logging.LevelInfo))
 
 	fmt.Println("Running synthesis..")
 	startedAt := time.Now().UnixMilli()
