@@ -79,7 +79,7 @@ func (s *Synthesizer) selectTargetBits(desiredState circuit.TruthTable, tt circu
 				selectedBit = rand.Intn(len(tt.Rows[0].Input))
 			}
 			targetBits = append(targetBits, selectedBit)
-			break
+			continue
 		}
 
 		tbProbabilities := make([]float64, 0)

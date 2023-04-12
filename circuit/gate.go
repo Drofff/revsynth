@@ -1,5 +1,7 @@
 package circuit
 
+import "log"
+
 type GateFactory struct {
 	NewGateFunc func(targetBits []int, controlBits []int) Gate
 	// TargetBitsCount - how many target bits the underlying gate anticipates.
@@ -30,3 +32,36 @@ const (
 
 // ControlBitValues indicate how to include a bit on a line into the gate's decision.
 var ControlBitValues = []int{ControlBitPositive, ControlBitNegative, ControlBitIgnore}
+
+func evalControlBits(state []int, controlBits []int) bool {
+	for controlBit, bitMode := range controlBits {
+		switch bitMode {
+		case ControlBitIgnore:
+			continue
+		case ControlBitPositive:
+			if state[controlBit] == 0 {
+				return false
+			}
+		case ControlBitNegative:
+			if state[controlBit] == 1 {
+				return false
+			}
+		default:
+			log.Fatalln("unexpected control bit mode:", bitMode)
+		}
+	}
+	return true
+}
+
+func updateTruthTable(calcNewOutput func(output []int) []int, tt TruthTable) TruthTable {
+	res := TruthTable{
+		Rows: make([]TruthTableRow, 0),
+	}
+
+	for _, row := range tt.Rows {
+		newOutput := calcNewOutput(row.Output)
+		res.Rows = append(res.Rows, TruthTableRow{Input: row.Input, Output: newOutput})
+	}
+
+	return res
+}
