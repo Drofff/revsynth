@@ -3,6 +3,8 @@ package aco
 import (
 	"log"
 	"math/rand"
+
+	"drofff.com/revsynth/utils"
 )
 
 func sumFloat64(nums []float64) float64 {
@@ -41,4 +43,17 @@ func chooseRand(probs []float64) int {
 
 	log.Fatalln("unexpected random select result for:", probs)
 	return -1
+}
+
+func haveSameElements(uniqueNums0, uniqueNums1 []int) bool {
+	if len(uniqueNums0) != len(uniqueNums1) {
+		return false
+	}
+
+	for _, uniqueNum0 := range uniqueNums0 {
+		if !utils.ContainsInt(uniqueNums1, uniqueNum0) {
+			return false
+		}
+	}
+	return true
 }

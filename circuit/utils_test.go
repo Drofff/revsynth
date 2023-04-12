@@ -73,39 +73,39 @@ func TestCutLoops(t *testing.T) {
 	tests := []struct {
 		title         string
 		states        []TruthTable
-		gates         []ToffoliGate
+		gates         []Gate
 		wantOutStates []TruthTable
-		wantOutGates  []ToffoliGate
+		wantOutGates  []Gate
 	}{
 		{
 			title:  "no loops",
 			states: []TruthTable{testStateA, testStateB, testStateC, testStateD},
-			gates: []ToffoliGate{
-				{ControlBits: []int{2, 2, 0}, TargetBit: 0},
-				{ControlBits: []int{2, 1, 0}, TargetBit: 1},
-				{ControlBits: []int{2, 0, 0}, TargetBit: 2},
+			gates: []Gate{
+				toffoliGate{controlBits: []int{2, 2, 0}, targetBit: 0},
+				toffoliGate{controlBits: []int{2, 1, 0}, targetBit: 1},
+				toffoliGate{controlBits: []int{2, 0, 0}, targetBit: 2},
 			},
 			wantOutStates: []TruthTable{testStateA, testStateB, testStateC, testStateD},
-			wantOutGates: []ToffoliGate{
-				{ControlBits: []int{2, 2, 0}, TargetBit: 0},
-				{ControlBits: []int{2, 1, 0}, TargetBit: 1},
-				{ControlBits: []int{2, 0, 0}, TargetBit: 2},
+			wantOutGates: []Gate{
+				toffoliGate{controlBits: []int{2, 2, 0}, targetBit: 0},
+				toffoliGate{controlBits: []int{2, 1, 0}, targetBit: 1},
+				toffoliGate{controlBits: []int{2, 0, 0}, targetBit: 2},
 			},
 		},
 		{
 			title:  "has loops",
 			states: []TruthTable{testStateA, testStateB, testStateC, testStateD, testStateB, testStateE},
-			gates: []ToffoliGate{
-				{ControlBits: []int{2, 2, 0}, TargetBit: 0},
-				{ControlBits: []int{2, 1, 0}, TargetBit: 1},
-				{ControlBits: []int{2, 0, 0}, TargetBit: 2},
-				{ControlBits: []int{2, 1, 0}, TargetBit: 0},
-				{ControlBits: []int{1, 1, 2}, TargetBit: 0},
+			gates: []Gate{
+				toffoliGate{controlBits: []int{2, 2, 0}, targetBit: 0},
+				toffoliGate{controlBits: []int{2, 1, 0}, targetBit: 1},
+				toffoliGate{controlBits: []int{2, 0, 0}, targetBit: 2},
+				toffoliGate{controlBits: []int{2, 1, 0}, targetBit: 0},
+				toffoliGate{controlBits: []int{1, 1, 2}, targetBit: 0},
 			},
 			wantOutStates: []TruthTable{testStateA, testStateB, testStateE},
-			wantOutGates: []ToffoliGate{
-				{ControlBits: []int{2, 2, 0}, TargetBit: 0},
-				{ControlBits: []int{1, 1, 2}, TargetBit: 0},
+			wantOutGates: []Gate{
+				toffoliGate{controlBits: []int{2, 2, 0}, targetBit: 0},
+				toffoliGate{controlBits: []int{1, 1, 2}, targetBit: 0},
 			},
 		},
 	}
@@ -123,38 +123,38 @@ func TestTrim(t *testing.T) {
 	tests := []struct {
 		title         string
 		states        []TruthTable
-		gates         []ToffoliGate
+		gates         []Gate
 		wantOutStates []TruthTable
-		wantOutGates  []ToffoliGate
+		wantOutGates  []Gate
 	}{
 		{
 			title:  "no trim",
 			states: []TruthTable{testStateA, testStateB, testStateC},
-			gates: []ToffoliGate{
-				{ControlBits: []int{2, 2, 0}, TargetBit: 0},
-				{ControlBits: []int{2, 1, 0}, TargetBit: 1},
+			gates: []Gate{
+				toffoliGate{controlBits: []int{2, 2, 0}, targetBit: 0},
+				toffoliGate{controlBits: []int{2, 1, 0}, targetBit: 1},
 			},
 			wantOutStates: []TruthTable{testStateA, testStateB, testStateC},
-			wantOutGates: []ToffoliGate{
-				{ControlBits: []int{2, 2, 0}, TargetBit: 0},
-				{ControlBits: []int{2, 1, 0}, TargetBit: 1},
+			wantOutGates: []Gate{
+				toffoliGate{controlBits: []int{2, 2, 0}, targetBit: 0},
+				toffoliGate{controlBits: []int{2, 1, 0}, targetBit: 1},
 			},
 		},
 
 		{
 			title:  "trim",
 			states: []TruthTable{testStateA, testStateB, testStateC, testStateD, testStateE, testStateC},
-			gates: []ToffoliGate{
-				{ControlBits: []int{2, 2, 0}, TargetBit: 0},
-				{ControlBits: []int{2, 1, 0}, TargetBit: 1},
-				{ControlBits: []int{2, 0, 0}, TargetBit: 2},
-				{ControlBits: []int{1, 1, 0}, TargetBit: 3},
-				{ControlBits: []int{0, 0, 0}, TargetBit: 2},
+			gates: []Gate{
+				toffoliGate{controlBits: []int{2, 2, 0}, targetBit: 0},
+				toffoliGate{controlBits: []int{2, 1, 0}, targetBit: 1},
+				toffoliGate{controlBits: []int{2, 0, 0}, targetBit: 2},
+				toffoliGate{controlBits: []int{1, 1, 0}, targetBit: 3},
+				toffoliGate{controlBits: []int{0, 0, 0}, targetBit: 2},
 			},
 			wantOutStates: []TruthTable{testStateA, testStateB, testStateC},
-			wantOutGates: []ToffoliGate{
-				{ControlBits: []int{2, 2, 0}, TargetBit: 0},
-				{ControlBits: []int{2, 1, 0}, TargetBit: 1},
+			wantOutGates: []Gate{
+				toffoliGate{controlBits: []int{2, 2, 0}, targetBit: 0},
+				toffoliGate{controlBits: []int{2, 1, 0}, targetBit: 1},
 			},
 		},
 	}

@@ -41,27 +41,27 @@ func detectLoops(states []TruthTable) []loop {
 	return loops
 }
 
-func removeLoops(states []TruthTable, gates []ToffoliGate, loops []loop) ([]TruthTable, []ToffoliGate) {
+func removeLoops(states []TruthTable, gates []Gate, loops []loop) ([]TruthTable, []Gate) {
 	markedStates := make([]TruthTable, len(states))
 	copy(markedStates, states)
-	markedGates := make([]ToffoliGate, len(gates))
+	markedGates := make([]Gate, len(gates))
 	copy(markedGates, gates)
 
 	for _, loop := range loops {
 		for i := loop.start; i < loop.end; i++ {
 			markedStates[i] = TruthTable{Rows: nil}
-			markedGates[i] = ToffoliGate{TargetBit: -1}
+			markedGates[i] = nil
 		}
 	}
 
 	updatedStates := make([]TruthTable, 0)
-	updatedGates := make([]ToffoliGate, 0)
+	updatedGates := make([]Gate, 0)
 	for i := 0; i < len(markedStates); i++ {
 		if markedStates[i].Rows != nil {
 			updatedStates = append(updatedStates, markedStates[i])
 		}
 
-		if i < len(markedStates)-1 && markedGates[i].TargetBit != -1 {
+		if i < len(markedStates)-1 && markedGates[i] != nil {
 			updatedGates = append(updatedGates, markedGates[i])
 		}
 	}
@@ -71,7 +71,7 @@ func removeLoops(states []TruthTable, gates []ToffoliGate, loops []loop) ([]Trut
 
 // CutLoops detects and removes unnecessary operations that lead back to the state circuit already had.
 // f.e. "A -> B -> C -> D -> B -> E -> F" will be simplified to "A -> B -> E -> F"
-func CutLoops(states []TruthTable, gates []ToffoliGate) ([]TruthTable, []ToffoliGate) {
+func CutLoops(states []TruthTable, gates []Gate) ([]TruthTable, []Gate) {
 	loops := detectLoops(states)
 	if len(loops) > 0 {
 		return removeLoops(states, gates, loops)
@@ -81,7 +81,7 @@ func CutLoops(states []TruthTable, gates []ToffoliGate) ([]TruthTable, []Toffoli
 
 // Trim removes redundant operations after the final result has been found for the first time.
 // f.e. "A -> B -> C -> D -> B" will turn into "A -> B"
-func Trim(states []TruthTable, gates []ToffoliGate) ([]TruthTable, []ToffoliGate) {
+func Trim(states []TruthTable, gates []Gate) ([]TruthTable, []Gate) {
 	finalVector := states[len(states)-1].ToVector().Vector
 
 	trimTo := -1

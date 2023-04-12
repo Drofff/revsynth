@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"drofff.com/revsynth/circuit"
+	"drofff.com/revsynth/utils"
 )
 
 func printRow(printFunc func()) {
@@ -53,7 +54,7 @@ func DrawTruthTable(tt circuit.TruthTable) {
 	printRowDelim(insCount)
 }
 
-func DrawCircuit(inputsCount int, gates []circuit.ToffoliGate) {
+func DrawCircuit(inputsCount int, gates []circuit.Gate) {
 
 	for i := 0; i < inputsCount; i++ {
 		line := fmt.Sprintf("x%v --", i+1)
@@ -61,11 +62,11 @@ func DrawCircuit(inputsCount int, gates []circuit.ToffoliGate) {
 		bit := inputsCount - i - 1
 		for gateIndex := len(gates) - 1; gateIndex >= 0; gateIndex-- {
 			gate := gates[gateIndex]
-			if gate.TargetBit == bit {
+			if utils.ContainsInt(gate.TargetBits(), bit) {
 				line += "o--"
-			} else if gate.ControlBits[bit] == 0 {
+			} else if gate.ControlBits()[bit] == 0 {
 				line += "p--"
-			} else if gate.ControlBits[bit] == 1 {
+			} else if gate.ControlBits()[bit] == 1 {
 				line += "n--"
 			} else {
 				line += "---"

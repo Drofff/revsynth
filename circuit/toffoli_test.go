@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestUpdateTruthTable(t *testing.T) {
+func TestToffoliGate_Apply(t *testing.T) {
 	tt := TruthTable{
 		Rows: []TruthTableRow{
 			{Input: []int{0, 0, 0}, Output: []int{0, 0, 0}},
@@ -29,9 +29,9 @@ func TestUpdateTruthTable(t *testing.T) {
 		{Input: []int{1, 1, 1}, Output: []int{0, 0, 1}},
 	}
 
-	tt1 := UpdateTruthTable(tt, ToffoliGate{ControlBits: []int{2, 2, 0}, TargetBit: 0})
-	tt2 := UpdateTruthTable(tt1, ToffoliGate{ControlBits: []int{2, 2, 2}, TargetBit: 1})
-	tt3 := UpdateTruthTable(tt2, ToffoliGate{ControlBits: []int{0, 0, 2}, TargetBit: 2})
+	tt1 := toffoliGate{controlBits: []int{2, 2, 0}, targetBit: 0}.Apply(tt)
+	tt2 := toffoliGate{controlBits: []int{2, 2, 2}, targetBit: 1}.Apply(tt1)
+	tt3 := toffoliGate{controlBits: []int{0, 0, 2}, targetBit: 2}.Apply(tt2)
 
 	for i := range expectedResult {
 		if !equal(expectedResult[i].Input, tt3.Rows[i].Input) {

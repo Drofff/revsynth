@@ -2,34 +2,48 @@ package circuit
 
 import "log"
 
-type ToffoliGate struct {
-	ControlBits []int
-	TargetBit   int
+type toffoliGate struct {
+	controlBits []int
+	targetBit   int
 }
 
-const (
-	ControlBitPositive = 0
-	ControlBitNegative = 1
-	ControlBitIgnore   = 2
-)
+const toffoliTargetBitsCount = 1
 
-var ControlBitValues = []int{ControlBitPositive, ControlBitNegative, ControlBitIgnore}
+func NewToffoliGateFactory() GateFactory {
+	return GateFactory{
+		NewGateFunc: func(targetBits []int, controlBits []int) Gate {
+			if len(targetBits) != toffoliTargetBitsCount {
+				log.Fatalln("unexpected target bits count:", len(targetBits))
+			}
+			return toffoliGate{targetBit: targetBits[0], controlBits: controlBits}
+		},
+		TargetBitsCount: toffoliTargetBitsCount,
+	}
+}
 
-func (tg ToffoliGate) Apply(state []int) []int {
-	updatedState := make([]int, len(state))
-	copy(updatedState, state)
+func (tg toffoliGate) TargetBits() []int {
+	return []int{tg.targetBit}
+}
+
+func (tg toffoliGate) ControlBits() []int {
+	return tg.controlBits
+}
+
+func (tg toffoliGate) calcNewOutput(output []int) []int {
+	updatedOutput := make([]int, len(output))
+	copy(updatedOutput, output)
 
 	invert := true
-	for controlBit, bitMode := range tg.ControlBits {
+	for controlBit, bitMode := range tg.controlBits {
 		switch bitMode {
 		case ControlBitIgnore:
 			continue
 		case ControlBitPositive:
-			if state[controlBit] == 0 {
+			if output[controlBit] == 0 {
 				invert = false
 			}
 		case ControlBitNegative:
-			if state[controlBit] == 1 {
+			if output[controlBit] == 1 {
 				invert = false
 			}
 		default:
@@ -38,20 +52,20 @@ func (tg ToffoliGate) Apply(state []int) []int {
 	}
 
 	if invert {
-		updatedState[tg.TargetBit] = (state[tg.TargetBit] + 1) % 2
+		updatedOutput[tg.targetBit] = (updatedOutput[tg.targetBit] + 1) % 2
 	}
 
-	return updatedState
+	return updatedOutput
 }
 
-func UpdateTruthTable(tt TruthTable, gate ToffoliGate) TruthTable {
+func (tg toffoliGate) Apply(tt TruthTable) TruthTable {
 	res := TruthTable{
 		Rows: make([]TruthTableRow, 0),
 	}
 
 	for _, row := range tt.Rows {
-		resOutput := gate.Apply(row.Output)
-		res.Rows = append(res.Rows, TruthTableRow{Input: row.Input, Output: resOutput})
+		rowOutput := tg.calcNewOutput(row.Output)
+		res.Rows = append(res.Rows, TruthTableRow{Input: row.Input, Output: rowOutput})
 	}
 
 	return res

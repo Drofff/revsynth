@@ -5,11 +5,13 @@ import (
 
 	"drofff.com/revsynth/circuit"
 	"drofff.com/revsynth/logging"
+	"drofff.com/revsynth/utils"
 )
 
 type Synthesizer struct {
-	conf Config
-	log  logging.Logger
+	conf        Config
+	gateFactory circuit.GateFactory
+	log         logging.Logger
 }
 
 // Pheromones key - `FromState` and `ToState` concatenated into a string.
@@ -19,7 +21,7 @@ type Pheromones map[string]PheromoneDeposit
 type PheromoneDeposit struct {
 	FromState       circuit.TruthTable
 	ToState         circuit.TruthTable
-	UsedGate        circuit.ToffoliGate
+	UsedGate        circuit.Gate
 	PheromoneAmount float64
 }
 
@@ -31,11 +33,11 @@ type SynthesisResult struct {
 	States []circuit.TruthTable
 	// Gates sequentially transforming the desired truth table to zero func truth table.
 	// Please reverse this list before building a circuit.
-	Gates []circuit.ToffoliGate
+	Gates []circuit.Gate
 }
 
-func NewSynthesizer(conf Config, log logging.Logger) *Synthesizer {
-	return &Synthesizer{conf: conf, log: log}
+func NewSynthesizer(conf Config, gateFactory circuit.GateFactory, log logging.Logger) *Synthesizer {
+	return &Synthesizer{conf: conf, gateFactory: gateFactory, log: log}
 }
 
 func (s *Synthesizer) calcTargetBitWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) float64 {
@@ -44,7 +46,7 @@ func (s *Synthesizer) calcTargetBitWeight(desiredState circuit.TruthTable, tt ci
 	setComplexity := false
 
 	for _, pheromone := range pheromones {
-		if pheromone.FromState.Equal(tt) && pheromone.UsedGate.TargetBit == tb {
+		if pheromone.FromState.Equal(tt) && utils.ContainsInt(pheromone.UsedGate.TargetBits(), tb) {
 			pheromonesSum += pheromone.PheromoneAmount
 
 			complexity := CalcComplexity(pheromone.ToState, desiredState)
@@ -60,32 +62,47 @@ func (s *Synthesizer) calcTargetBitWeight(desiredState circuit.TruthTable, tt ci
 	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
 }
 
-func (s *Synthesizer) selectTargetBit(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) int {
-	tbWeights := make([]float64, 0)
-	for tbVal := 0; tbVal < len(tt.Rows[0].Input); tbVal++ {
-		tbWeights = append(tbWeights, s.calcTargetBitWeight(desiredState, tt, pheromones, tbVal))
+func (s *Synthesizer) selectTargetBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) []int {
+	targetBits := make([]int, 0)
+
+	for tbi := 0; tbi < s.gateFactory.TargetBitsCount; tbi++ {
+		tbWeights := make([]float64, 0)
+		for tbVal := 0; tbVal < len(tt.Rows[0].Input); tbVal++ {
+			tbWeights = append(tbWeights, s.calcTargetBitWeight(desiredState, tt, pheromones, tbVal))
+		}
+
+		selectedBit := -1
+
+		weightsSum := sumFloat64(tbWeights)
+		if weightsSum == 0.0 {
+			for selectedBit == -1 || utils.ContainsInt(targetBits, selectedBit) {
+				selectedBit = rand.Intn(len(tt.Rows[0].Input))
+			}
+			targetBits = append(targetBits, selectedBit)
+			break
+		}
+
+		tbProbabilities := make([]float64, 0)
+		for _, tbWeight := range tbWeights {
+			tbProbabilities = append(tbProbabilities, tbWeight/weightsSum)
+		}
+
+		for selectedBit == -1 || utils.ContainsInt(targetBits, selectedBit) {
+			selectedBit = chooseRand(tbProbabilities)
+		}
+		targetBits = append(targetBits, selectedBit)
 	}
 
-	weightsSum := sumFloat64(tbWeights)
-	if weightsSum == 0.0 {
-		return rand.Intn(len(tt.Rows[0].Input))
-	}
-
-	tbProbabilities := make([]float64, 0)
-	for _, tbWeight := range tbWeights {
-		tbProbabilities = append(tbProbabilities, tbWeight/weightsSum)
-	}
-
-	return chooseRand(tbProbabilities)
+	return targetBits
 }
 
-func (s *Synthesizer) calcControlBitWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int, cb int, cbValue int) float64 {
+func (s *Synthesizer) calcControlBitWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb []int, cb int, cbValue int) float64 {
 	pheromonesSum := 0.0
 	bestComplexity := 0
 	setComplexity := false
 
 	for _, pheromone := range pheromones {
-		if pheromone.FromState.Equal(tt) && pheromone.UsedGate.TargetBit == tb && pheromone.UsedGate.ControlBits[cb] == cbValue {
+		if pheromone.FromState.Equal(tt) && haveSameElements(pheromone.UsedGate.TargetBits(), tb) && pheromone.UsedGate.ControlBits()[cb] == cbValue {
 			pheromonesSum += pheromone.PheromoneAmount
 
 			complexity := CalcComplexity(pheromone.ToState, desiredState)
@@ -101,10 +118,10 @@ func (s *Synthesizer) calcControlBitWeight(desiredState circuit.TruthTable, tt c
 	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
 }
 
-func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) []int {
+func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb []int) []int {
 	controlBits := make([]int, 0)
 	for cb := 0; cb < len(tt.Rows[0].Input); cb++ {
-		if cb == tb {
+		if utils.ContainsInt(tb, cb) {
 			controlBits = append(controlBits, circuit.ControlBitIgnore)
 			continue
 		}
@@ -130,13 +147,13 @@ func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circ
 	return controlBits
 }
 
-func (s *Synthesizer) selectGate(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.ToffoliGate {
-	targetBit := s.selectTargetBit(desiredState, tt, pheromones)
-	controlBits := s.selectControlBits(desiredState, tt, pheromones, targetBit)
-	return circuit.ToffoliGate{TargetBit: targetBit, ControlBits: controlBits}
+func (s *Synthesizer) selectGate(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.Gate {
+	targetBits := s.selectTargetBits(desiredState, tt, pheromones)
+	controlBits := s.selectControlBits(desiredState, tt, pheromones, targetBits)
+	return s.gateFactory.NewGateFunc(targetBits, controlBits)
 }
 
-func (s *Synthesizer) depositPheromone(pheromones Pheromones, states []circuit.TruthTable, gates []circuit.ToffoliGate, dist int) {
+func (s *Synthesizer) depositPheromone(pheromones Pheromones, states []circuit.TruthTable, gates []circuit.Gate, dist int) {
 	var amount float64
 	if dist == 0 {
 		amount = s.conf.DepositStrength
@@ -192,7 +209,7 @@ func (s *Synthesizer) Synthesise(desiredVector circuit.TruthVector) SynthesisRes
 	pheromones := Pheromones{}
 
 	bestStates := make([]circuit.TruthTable, 0)
-	bestGates := make([]circuit.ToffoliGate, 0)
+	bestGates := make([]circuit.Gate, 0)
 	bestDist := CalcComplexity(desiredVector.ToTable(), targetState)
 
 	s.log.LogDebug("initial state defined..")
@@ -210,7 +227,7 @@ func (s *Synthesizer) Synthesise(desiredVector circuit.TruthVector) SynthesisRes
 			tourTruthTable := desiredVector.ToTable().Copy()
 			tourStates := []circuit.TruthTable{tourTruthTable}
 
-			tourGates := make([]circuit.ToffoliGate, 0)
+			tourGates := make([]circuit.Gate, 0)
 			tourDist := CalcComplexity(tourTruthTable, targetState)
 
 			for localLoop := 0; localLoop < s.conf.LocalLoops; localLoop++ {
@@ -222,12 +239,12 @@ func (s *Synthesizer) Synthesise(desiredVector circuit.TruthVector) SynthesisRes
 
 				nextGate := s.selectGate(targetState, tourTruthTable, pheromones)
 
-				localGates := make([]circuit.ToffoliGate, len(tourGates))
+				localGates := make([]circuit.Gate, len(tourGates))
 				copy(localGates, tourGates)
 				localGates = append(localGates, nextGate)
 
 				localTruthTable := tourTruthTable.Copy()
-				localTruthTable = circuit.UpdateTruthTable(localTruthTable, nextGate)
+				localTruthTable = nextGate.Apply(localTruthTable)
 				localStates := make([]circuit.TruthTable, len(tourStates))
 				copy(localStates, tourStates)
 				localStates = append(localStates, localTruthTable)
@@ -239,7 +256,7 @@ func (s *Synthesizer) Synthesise(desiredVector circuit.TruthVector) SynthesisRes
 					nextGate := s.selectGate(targetState, localTruthTable, pheromones)
 
 					localGates = append(localGates, nextGate)
-					localTruthTable = circuit.UpdateTruthTable(localTruthTable, nextGate)
+					localTruthTable = nextGate.Apply(localTruthTable)
 					localStates = append(localStates, localTruthTable)
 					localDist = CalcComplexity(localTruthTable, targetState)
 
