@@ -42,6 +42,12 @@ func main() {
 
 	fmt.Println("==========================")
 	fmt.Printf("Processing time: %v millis\n", processingTime)
+
+	if len(res.Gates) == 0 {
+		fmt.Println("Failed to find a solution. Please try different synthesis parameters")
+		return
+	}
+
 	fmt.Printf("Result:\n  Complexity=%v\n  NumOfGates=%v\n", res.Complexity, len(res.Gates))
 	fmt.Print("\n\n")
 
