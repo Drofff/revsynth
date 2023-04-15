@@ -288,9 +288,10 @@ func (s *Synthesizer) Synthesise(desiredVector circuit.TruthVector) SynthesisRes
 
 		s.updatePheromones(pheromones, iterationDeposits)
 
-		s.log.LogInfo(".")
+		s.log.LogInfof(".")
 
 	}
 
+	s.log.LogInfof("\n")
 	return SynthesisResult{States: bestStates, Gates: bestGates, Complexity: bestDist}
 }

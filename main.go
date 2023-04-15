@@ -12,11 +12,11 @@ import (
 
 func main() {
 	conf := aco.Config{
-		NumOfAnts:       30,
-		NumOfIterations: 15,
+		NumOfAnts:       20,
+		NumOfIterations: 30,
 		Alpha:           2.0,
-		Beta:            1.0,
-		EvaporationRate: 0.5,
+		Beta:            1.5,
+		EvaporationRate: 0.3,
 		DepositStrength: 100,
 
 		LocalLoops:  4,

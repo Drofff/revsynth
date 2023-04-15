@@ -19,14 +19,18 @@ func NewLogger(level Level) Logger {
 
 func (l Logger) log(level Level, msg string, params ...any) {
 	if level >= l.level {
-		fmt.Printf(msg+"\n", params...)
+		fmt.Printf(msg, params...)
 	}
 }
 
-func (l Logger) LogDebug(msg string, params ...any) {
-	l.log(LevelDebug, msg, params...)
+func (l Logger) logln(level Level, msg string, params ...any) {
+	l.log(level, msg+"\n", params...)
 }
 
-func (l Logger) LogInfo(msg string, params ...any) {
+func (l Logger) LogDebug(msg string, params ...any) {
+	l.logln(LevelDebug, msg, params...)
+}
+
+func (l Logger) LogInfof(msg string, params ...any) {
 	l.log(LevelInfo, msg, params...)
 }
