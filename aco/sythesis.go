@@ -3,9 +3,9 @@ package aco
 import (
 	"math/rand"
 
-	"drofff.com/revsynth/circuit"
-	"drofff.com/revsynth/logging"
-	"drofff.com/revsynth/utils"
+	"github.com/Drofff/revsynth/circuit"
+	"github.com/Drofff/revsynth/logging"
+	"github.com/Drofff/revsynth/utils"
 )
 
 type Synthesizer struct {

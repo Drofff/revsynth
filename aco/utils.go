@@ -4,7 +4,7 @@ import (
 	"log"
 	"math/rand"
 
-	"drofff.com/revsynth/utils"
+	"github.com/Drofff/revsynth/utils"
 )
 
 func sumFloat64(nums []float64) float64 {

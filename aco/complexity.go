@@ -3,7 +3,7 @@ package aco
 import (
 	"log"
 
-	"drofff.com/revsynth/circuit"
+	"github.com/Drofff/revsynth/circuit"
 )
 
 func CalcComplexity(actualState, desiredState circuit.TruthTable) int {

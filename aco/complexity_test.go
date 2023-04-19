@@ -3,7 +3,7 @@ package aco
 import (
 	"testing"
 
-	"drofff.com/revsynth/circuit"
+	"github.com/Drofff/revsynth/circuit"
 	"github.com/stretchr/testify/assert"
 )
 

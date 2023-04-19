@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"drofff.com/revsynth/circuit"
-	"drofff.com/revsynth/utils"
+	"github.com/Drofff/revsynth/circuit"
+	"github.com/Drofff/revsynth/utils"
 )
 
 func printRow(printFunc func()) {

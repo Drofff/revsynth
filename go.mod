@@ -1,4 +1,4 @@
-module drofff.com/revsynth
+module github.com/Drofff/revsynth
 
 go 1.20
 

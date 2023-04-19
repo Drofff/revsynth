@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"time"
 
-	"drofff.com/revsynth/aco"
-	"drofff.com/revsynth/circuit"
-	"drofff.com/revsynth/cli"
-	"drofff.com/revsynth/logging"
+	"github.com/Drofff/revsynth/aco"
+	"github.com/Drofff/revsynth/circuit"
+	"github.com/Drofff/revsynth/cli"
+	"github.com/Drofff/revsynth/logging"
 )
 
 func main() {
