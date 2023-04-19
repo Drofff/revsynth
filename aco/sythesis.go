@@ -37,6 +37,9 @@ type SynthesisResult struct {
 }
 
 func NewSynthesizer(conf Config, gateFactory circuit.GateFactory, log logging.Logger) *Synthesizer {
+	if conf.AllowedControlBitValues == nil {
+		conf.AllowedControlBitValues = circuit.ControlBitValues
+	}
 	return &Synthesizer{conf: conf, gateFactory: gateFactory, log: log}
 }
 
@@ -127,13 +130,14 @@ func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circ
 		}
 
 		cbWeights := make([]float64, 0)
-		for _, cbValue := range circuit.ControlBitValues {
+		for _, cbValue := range s.conf.AllowedControlBitValues {
 			cbWeights = append(cbWeights, s.calcControlBitWeight(desiredState, tt, pheromones, tb, cb, cbValue))
 		}
 
 		weightsSum := sumFloat64(cbWeights)
 		if weightsSum == 0.0 {
-			controlBits = append(controlBits, circuit.ControlBitValues[rand.Intn(len(circuit.ControlBitValues))])
+			randControlBitValue := s.conf.AllowedControlBitValues[rand.Intn(len(s.conf.AllowedControlBitValues))]
+			controlBits = append(controlBits, randControlBitValue)
 			continue
 		}
 

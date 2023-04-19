@@ -16,4 +16,9 @@ type Config struct {
 	LocalLoops int
 	// SearchDepth defines number of gates an ant can use within a leap (local loop).
 	SearchDepth int
+
+	// AllowedControlBitValues is a list of circuit.ControlBitValues a control bit can be assigned
+	// in the synthesised circuit. Defaults to all values. It is recommended to follow the default
+	// unless a custom list is really needed.
+	AllowedControlBitValues []int
 }
