@@ -146,7 +146,8 @@ func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circ
 			cbValueProbs = append(cbValueProbs, cbWeight/weightsSum)
 		}
 
-		controlBits = append(controlBits, chooseRand(cbValueProbs))
+		selectedCBValue := s.conf.AllowedControlBitValues[chooseRand(cbValueProbs)]
+		controlBits = append(controlBits, selectedCBValue)
 	}
 	return controlBits
 }
