@@ -21,7 +21,8 @@ func NewToffoliGateFactory() GateFactory {
 			}
 			return toffoliGate{targetBit: targetBits[0], controlBits: controlBits}
 		},
-		TargetBitsCount: toffoliTargetBitsCount,
+		TargetBitsCount:  toffoliTargetBitsCount,
+		ControlBitsLimit: ControlBitsNoLimit,
 	}
 }
 

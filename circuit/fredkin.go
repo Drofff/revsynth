@@ -22,7 +22,8 @@ func NewFredkinGateFactory() GateFactory {
 			}
 			return fredkinGate{controlBits: controlBits, targetBits: targetBits}
 		},
-		TargetBitsCount: fredkinTargetBitsCount,
+		TargetBitsCount:  fredkinTargetBitsCount,
+		ControlBitsLimit: ControlBitsNoLimit,
 	}
 }
 

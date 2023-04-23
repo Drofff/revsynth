@@ -8,6 +8,9 @@ type GateFactory struct {
 	GateType string
 	// TargetBitsCount - how many target bits the underlying gate anticipates.
 	TargetBitsCount int
+	// ControlBitsLimit - is an upper-bound for how many control bits the gate can use.
+	// For gates that have no limits, set this value to ControlBitsNoLimit.
+	ControlBitsLimit int
 }
 
 // Gate is a general representation of a quantum circuit gate element.
@@ -31,6 +34,9 @@ const (
 	ControlBitNegative = 1
 	// ControlBitIgnore - indicates that the line should not be included into the gate's decision.
 	ControlBitIgnore = 2
+
+	// ControlBitsNoLimit - a special value indicating that a gate type has no limits on control bits count.
+	ControlBitsNoLimit = -1
 )
 
 // ControlBitValues indicate how to include a bit on a line into the gate's decision.
