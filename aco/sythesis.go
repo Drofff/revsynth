@@ -9,9 +9,9 @@ import (
 )
 
 type Synthesizer struct {
-	conf        Config
-	gateFactory circuit.GateFactory
-	log         logging.Logger
+	conf          Config
+	gateFactories []circuit.GateFactory
+	log           logging.Logger
 }
 
 // Pheromones key - `FromState` and `ToState` concatenated into a string.
@@ -36,11 +36,15 @@ type SynthesisResult struct {
 	Gates []circuit.Gate
 }
 
-func NewSynthesizer(conf Config, gateFactory circuit.GateFactory, log logging.Logger) *Synthesizer {
+func NewSynthesizer(conf Config, gateFactories []circuit.GateFactory, log logging.Logger) *Synthesizer {
+	if gateFactories == nil || len(gateFactories) == 0 {
+		panic("missing gate factories: at least one must be provided")
+	}
+
 	if conf.AllowedControlBitValues == nil {
 		conf.AllowedControlBitValues = circuit.ControlBitValues
 	}
-	return &Synthesizer{conf: conf, gateFactory: gateFactory, log: log}
+	return &Synthesizer{conf: conf, gateFactories: gateFactories, log: log}
 }
 
 func (s *Synthesizer) calcTargetBitWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb int) float64 {
@@ -65,10 +69,10 @@ func (s *Synthesizer) calcTargetBitWeight(desiredState circuit.TruthTable, tt ci
 	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
 }
 
-func (s *Synthesizer) selectTargetBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) []int {
+func (s *Synthesizer) selectTargetBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tbCount int) []int {
 	targetBits := make([]int, 0)
 
-	for tbi := 0; tbi < s.gateFactory.TargetBitsCount; tbi++ {
+	for tbi := 0; tbi < tbCount; tbi++ {
 		tbWeights := make([]float64, 0)
 		for tbVal := 0; tbVal < len(tt.Rows[0].Input); tbVal++ {
 			tbWeights = append(tbWeights, s.calcTargetBitWeight(desiredState, tt, pheromones, tbVal))
@@ -152,10 +156,55 @@ func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circ
 	return controlBits
 }
 
+func (s *Synthesizer) calcGateTypeWeight(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, gf circuit.GateFactory) float64 {
+	pheromonesSum := 0.0
+	bestComplexity := 0
+	setComplexity := false
+
+	for _, pheromone := range pheromones {
+		if pheromone.FromState.Equal(tt) && pheromone.UsedGate.TypeName() == gf.GateType {
+			pheromonesSum += pheromone.PheromoneAmount
+
+			complexity := CalcComplexity(pheromone.ToState, desiredState)
+			if !setComplexity {
+				bestComplexity = complexity
+				setComplexity = true
+			} else if complexity < bestComplexity {
+				bestComplexity = complexity
+			}
+		}
+	}
+
+	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
+}
+
+func (s *Synthesizer) selectGateType(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.GateFactory {
+	if len(s.gateFactories) == 1 {
+		return s.gateFactories[0]
+	}
+
+	gfWeights := make([]float64, 0)
+	for _, gf := range s.gateFactories {
+		gfWeights = append(gfWeights, s.calcGateTypeWeight(desiredState, tt, pheromones, gf))
+	}
+
+	weightsSum := sumFloat64(gfWeights)
+	if weightsSum == 0.0 {
+		return s.gateFactories[rand.Intn(len(s.gateFactories))]
+	}
+
+	gfProbs := make([]float64, 0)
+	for _, gfW := range gfWeights {
+		gfProbs = append(gfProbs, gfW/weightsSum)
+	}
+	return s.gateFactories[chooseRand(gfProbs)]
+}
+
 func (s *Synthesizer) selectGate(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.Gate {
-	targetBits := s.selectTargetBits(desiredState, tt, pheromones)
+	gf := s.selectGateType(desiredState, tt, pheromones)
+	targetBits := s.selectTargetBits(desiredState, tt, pheromones, gf.TargetBitsCount)
 	controlBits := s.selectControlBits(desiredState, tt, pheromones, targetBits)
-	return s.gateFactory.NewGateFunc(targetBits, controlBits)
+	return gf.NewGateFunc(targetBits, controlBits)
 }
 
 func (s *Synthesizer) depositPheromone(pheromones Pheromones, states []circuit.TruthTable, gates []circuit.Gate, dist int) {

@@ -7,10 +7,14 @@ type toffoliGate struct {
 	targetBit   int
 }
 
-const toffoliTargetBitsCount = 1
+const (
+	toffoliTargetBitsCount = 1
+	toffoliTypeName        = "toffoli"
+)
 
 func NewToffoliGateFactory() GateFactory {
 	return GateFactory{
+		GateType: toffoliTypeName,
 		NewGateFunc: func(targetBits []int, controlBits []int) Gate {
 			if len(targetBits) != toffoliTargetBitsCount {
 				log.Fatalln("unexpected target bits count:", len(targetBits))
@@ -19,6 +23,10 @@ func NewToffoliGateFactory() GateFactory {
 		},
 		TargetBitsCount: toffoliTargetBitsCount,
 	}
+}
+
+func (tg toffoliGate) TypeName() string {
+	return toffoliTypeName
 }
 
 func (tg toffoliGate) TargetBits() []int {

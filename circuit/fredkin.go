@@ -8,10 +8,14 @@ type fredkinGate struct {
 	targetBits []int
 }
 
-const fredkinTargetBitsCount = 2
+const (
+	fredkinTargetBitsCount = 2
+	fredkinTypeName        = "fredkin"
+)
 
 func NewFredkinGateFactory() GateFactory {
 	return GateFactory{
+		GateType: fredkinTypeName,
 		NewGateFunc: func(targetBits []int, controlBits []int) Gate {
 			if len(targetBits) != fredkinTargetBitsCount {
 				log.Fatalln("unexpected target bits count:", len(targetBits))
@@ -20,6 +24,10 @@ func NewFredkinGateFactory() GateFactory {
 		},
 		TargetBitsCount: fredkinTargetBitsCount,
 	}
+}
+
+func (fg fredkinGate) TypeName() string {
+	return fredkinTypeName
 }
 
 func (fg fredkinGate) TargetBits() []int {

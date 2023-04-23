@@ -4,12 +4,15 @@ import "log"
 
 type GateFactory struct {
 	NewGateFunc func(targetBits []int, controlBits []int) Gate
+	// GateType contains `TypeName` of the underlying gate.
+	GateType string
 	// TargetBitsCount - how many target bits the underlying gate anticipates.
 	TargetBitsCount int
 }
 
 // Gate is a general representation of a quantum circuit gate element.
 type Gate interface {
+	TypeName() string
 	// TargetBits returns a slice of position indexes that indicate what circuit lines
 	// the resulting bit modification should be applied to.
 	TargetBits() []int
