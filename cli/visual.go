@@ -76,16 +76,16 @@ func DrawCircuit(inputsCount int, gates []circuit.Gate) {
 		fmt.Println(line)
 	}
 
-	line := "    "
+	line := "     "
 	for gateIndex := len(gates) - 1; gateIndex >= 0; gateIndex-- {
 		gate := gates[gateIndex]
 		switch gate.TypeName() {
 		case "toffoli":
-			line += "t--"
+			line += "t  "
 		case "fredkin":
-			line += "f--"
+			line += "f  "
 		case "cnot":
-			line += "cn-"
+			line += "cn "
 		}
 	}
 	fmt.Println(line)

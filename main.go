@@ -23,7 +23,7 @@ func main() {
 		SearchDepth: 6,
 	}
 	synth := aco.NewSynthesizer(conf, []circuit.GateFactory{
-		circuit.NewToffoliGateFactory(), circuit.NewFredkinGateFactory()}, logging.NewLogger(logging.LevelInfo))
+		circuit.NewFredkinGateFactory(), circuit.NewCnotGateFactory()}, logging.NewLogger(logging.LevelInfo))
 
 	fmt.Println("Running synthesis..")
 	startedAt := time.Now().UnixMilli()
