@@ -125,10 +125,10 @@ func (s *Synthesizer) calcControlBitWeight(desiredState circuit.TruthTable, tt c
 	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
 }
 
-func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb []int) []int {
+func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, tb []int, cbLimit int) []int {
 	controlBits := make([]int, 0)
 	for cb := 0; cb < len(tt.Rows[0].Input); cb++ {
-		if utils.ContainsInt(tb, cb) {
+		if utils.ContainsInt(tb, cb) || (cbLimit != circuit.ControlBitsNoLimit && circuit.CountControls(controlBits) == cbLimit) {
 			controlBits = append(controlBits, circuit.ControlBitIgnore)
 			continue
 		}
@@ -203,7 +203,7 @@ func (s *Synthesizer) selectGateType(desiredState circuit.TruthTable, tt circuit
 func (s *Synthesizer) selectGate(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.Gate {
 	gf := s.selectGateType(desiredState, tt, pheromones)
 	targetBits := s.selectTargetBits(desiredState, tt, pheromones, gf.TargetBitsCount)
-	controlBits := s.selectControlBits(desiredState, tt, pheromones, targetBits)
+	controlBits := s.selectControlBits(desiredState, tt, pheromones, targetBits, gf.ControlBitsLimit)
 	return gf.NewGateFunc(targetBits, controlBits)
 }
 

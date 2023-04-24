@@ -42,6 +42,16 @@ const (
 // ControlBitValues indicate how to include a bit on a line into the gate's decision.
 var ControlBitValues = []int{ControlBitPositive, ControlBitNegative, ControlBitIgnore}
 
+func CountControls(controlBits []int) int {
+	controlsCount := 0
+	for _, cbValue := range controlBits {
+		if cbValue == ControlBitPositive || cbValue == ControlBitNegative {
+			controlsCount++
+		}
+	}
+	return controlsCount
+}
+
 func evalControlBits(state []int, controlBits []int) bool {
 	for controlBit, bitMode := range controlBits {
 		switch bitMode {

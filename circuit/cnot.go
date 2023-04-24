@@ -14,19 +14,6 @@ const (
 	cnotTypeName         = "cnot"
 )
 
-func validateControlBits(controlBits []int) {
-	count := 0
-	for _, cb := range controlBits {
-		if cb == ControlBitPositive || cb == ControlBitNegative {
-			count++
-		}
-	}
-
-	if count > cnotControlBitsLimit {
-		log.Fatalln("invalid control bits for CNOT:", controlBits)
-	}
-}
-
 func NewCnotGateFactory() GateFactory {
 	return GateFactory{
 		GateType: cnotTypeName,
@@ -34,7 +21,9 @@ func NewCnotGateFactory() GateFactory {
 			if len(targetBits) != cnotTargetBitsCount {
 				log.Fatalln("unexpected target bits count:", len(targetBits))
 			}
-			validateControlBits(controlBits)
+			if CountControls(controlBits) > cnotControlBitsLimit {
+				log.Fatalln("invalid control bits for CNOT:", controlBits)
+			}
 			return cnotGate{targetBit: targetBits[0], controlBits: controlBits}
 		},
 		TargetBitsCount:  cnotTargetBitsCount,
