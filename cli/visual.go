@@ -86,6 +86,10 @@ func DrawCircuit(inputsCount int, gates []circuit.Gate) {
 			line += "f  "
 		case "cnot":
 			line += "cn "
+		case "not":
+			line += "n  "
+		default:
+			line += "-  "
 		}
 	}
 	fmt.Println(line)
