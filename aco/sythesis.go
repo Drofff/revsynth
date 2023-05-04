@@ -259,7 +259,7 @@ func (s *Synthesizer) updatePheromones(pheromones Pheromones, newDeposits Pherom
 // Synthesise uses desiredVector as a starting point and "zero-state" as the target state.
 func (s *Synthesizer) Synthesise(desiredVector circuit.TruthVector) SynthesisResult {
 
-	targetState := circuit.InitZeroTruthTable(desiredVector.Inputs)
+	targetState := circuit.InitZeroTruthTable(desiredVector.Inputs, desiredVector.AdditionalLinesMask)
 	pheromones := Pheromones{}
 
 	bestStates := make([]circuit.TruthTable, 0)

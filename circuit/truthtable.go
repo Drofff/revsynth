@@ -6,7 +6,8 @@ import (
 )
 
 type TruthTable struct {
-	Rows []TruthTableRow
+	Rows                []TruthTableRow
+	AdditionalLinesMask []int
 }
 
 type TruthTableRow struct {
@@ -17,10 +18,18 @@ type TruthTableRow struct {
 type TruthVector struct {
 	Inputs [][]int
 	Vector []int
+	// VectorNoAL excludes additional lines.
+	VectorNoAL          []int
+	AdditionalLinesMask []int
 }
 
-func InitZeroTruthTable(inputs [][]int) TruthTable {
-	tt := TruthTable{Rows: make([]TruthTableRow, 0)}
+const (
+	additionalLinesMaskIsAL  = 0
+	additionalLinesMaskNotAL = 1
+)
+
+func InitZeroTruthTable(inputs [][]int, alMask []int) TruthTable {
+	tt := TruthTable{Rows: make([]TruthTableRow, 0), AdditionalLinesMask: alMask}
 	for _, input := range inputs {
 		tt.Rows = append(tt.Rows, TruthTableRow{Input: input, Output: input})
 	}
@@ -32,7 +41,7 @@ func (tt TruthTable) Copy() TruthTable {
 	for _, row := range tt.Rows {
 		cRows = append(cRows, row.Copy())
 	}
-	return TruthTable{Rows: cRows}
+	return TruthTable{Rows: cRows, AdditionalLinesMask: tt.AdditionalLinesMask}
 }
 
 func binToDec(bins []int) int {
@@ -47,17 +56,39 @@ func binToDec(bins []int) int {
 	return int(dec)
 }
 
+func (tt TruthTable) withoutAdditionalLines(out []int) []int {
+	if len(tt.AdditionalLinesMask) == 0 {
+		return out
+	}
+
+	outNoAL := make([]int, 0)
+	for outI, outEl := range out {
+		if tt.AdditionalLinesMask[outI] == additionalLinesMaskIsAL {
+			continue
+		}
+
+		if tt.AdditionalLinesMask[outI] != additionalLinesMaskNotAL {
+			panic(fmt.Sprintf("unexpected additional lines mask value: %v", tt.AdditionalLinesMask[outI]))
+		}
+
+		outNoAL = append(outNoAL, outEl)
+	}
+	return outNoAL
+}
+
 func (tt TruthTable) ToVector() TruthVector {
 
 	ins := make([][]int, 0)
 	v := make([]int, 0)
+	vNoAL := make([]int, 0)
 
 	for _, row := range tt.Rows {
 		ins = append(ins, row.Input)
 		v = append(v, binToDec(row.Output))
+		vNoAL = append(vNoAL, binToDec(tt.withoutAdditionalLines(row.Output)))
 	}
 
-	return TruthVector{Inputs: ins, Vector: v}
+	return TruthVector{Inputs: ins, Vector: v, VectorNoAL: vNoAL}
 }
 
 func (tt TruthTable) Key() string {
@@ -94,7 +125,7 @@ func decToBin(dec int, binLen int) []int {
 
 func (tv TruthVector) ToTable() TruthTable {
 
-	tt := TruthTable{Rows: make([]TruthTableRow, 0)}
+	tt := TruthTable{Rows: make([]TruthTableRow, 0), AdditionalLinesMask: tv.AdditionalLinesMask}
 	outputLen := len(tv.Inputs[0])
 
 	for i := range tv.Vector {

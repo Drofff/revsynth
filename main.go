@@ -28,15 +28,15 @@ func main() {
 	fmt.Println("Running synthesis..")
 	startedAt := time.Now().UnixMilli()
 	desiredVector := circuit.TruthVector{Inputs: [][]int{
-		{0, 0, 0},
-		{0, 0, 1},
-		{0, 1, 0},
-		{0, 1, 1},
-		{1, 0, 0},
-		{1, 0, 1},
-		{1, 1, 0},
-		{1, 1, 1},
-	}, Vector: []int{1, 0, 3, 2, 5, 7, 4, 6}}
+		{0, 0, 0, 1},
+		{0, 0, 1, 1},
+		{0, 1, 0, 1},
+		{0, 1, 1, 1},
+		{1, 0, 0, 1},
+		{1, 0, 1, 1},
+		{1, 1, 0, 1},
+		{1, 1, 1, 1},
+	}, Vector: []int{1, 0, 3, 2, 5, 7, 4, 6}, AdditionalLinesMask: []int{1, 1, 1, 0}}
 	res := synth.Synthesise(desiredVector)
 
 	processingTime := time.Now().UnixMilli() - startedAt
