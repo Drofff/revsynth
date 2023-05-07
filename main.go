@@ -10,9 +10,11 @@ import (
 	"github.com/Drofff/revsynth/logging"
 )
 
+const pheromonesOutputFile = "pheromones.gv"
+
 func main() {
 	conf := aco.Config{
-		NumOfAnts:       100,
+		NumOfAnts:       20,
 		NumOfIterations: 30,
 		Alpha:           2.0,
 		Beta:            1.5,
@@ -22,7 +24,7 @@ func main() {
 		LocalLoops:  20,
 		SearchDepth: 10,
 	}
-	synth := aco.NewSynthesizer(conf, []circuit.GateFactory{circuit.NewToffoliGateFactory()}, logging.NewLogger(logging.LevelInfo))
+	synth := aco.NewSynthesizer(conf, []circuit.GateFactory{circuit.NewFredkinGateFactory()}, logging.NewLogger(logging.LevelInfo))
 
 	fmt.Println("Running synthesis..")
 	startedAt := time.Now().UnixMilli()
@@ -38,6 +40,12 @@ func main() {
 
 	fmt.Println("==========================")
 	fmt.Printf("Processing time: %v millis\n", processingTime)
+
+	fmt.Printf("Saving pheromoes graph in %v\n", pheromonesOutputFile)
+	err := cli.SaveGraph(res.Pheromones, pheromonesOutputFile)
+	if err != nil {
+		fmt.Printf("ERROR: failed to save pheromones %e", err)
+	}
 
 	if len(res.Gates) == 0 {
 		fmt.Println("Failed to find a solution. Please try different synthesis parameters")

@@ -34,6 +34,8 @@ type SynthesisResult struct {
 	// Gates sequentially transforming the desired truth table to zero func truth table.
 	// Please reverse this list before building a circuit.
 	Gates []circuit.Gate
+	// Pheromones is the final state of the pheromone deposits graph.
+	Pheromones Pheromones
 }
 
 func NewSynthesizer(conf Config, gateFactories []circuit.GateFactory, log logging.Logger) *Synthesizer {
@@ -347,5 +349,5 @@ func (s *Synthesizer) Synthesise(desiredVector circuit.TruthVector) SynthesisRes
 	}
 
 	s.log.LogInfof("\n")
-	return SynthesisResult{States: bestStates, Gates: bestGates, Complexity: bestDist}
+	return SynthesisResult{States: bestStates, Gates: bestGates, Complexity: bestDist, Pheromones: pheromones}
 }
