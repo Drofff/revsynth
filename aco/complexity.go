@@ -7,8 +7,8 @@ import (
 )
 
 func CalcComplexity(actualState, desiredState circuit.TruthTable) int {
-	actualVector := actualState.ToVector().Vector
-	desiredVector := desiredState.ToVector().Vector
+	actualVector := actualState.ToVector().VectorNoAL
+	desiredVector := desiredState.ToVector().VectorNoAL
 
 	if len(actualVector) != len(desiredVector) {
 		log.Fatalf("critical error, different table dimension: actual %v desired %v\n", len(actualVector), len(desiredVector))
