@@ -1,6 +1,7 @@
 package aco
 
 import (
+	"math"
 	"math/rand"
 
 	"github.com/Drofff/revsynth/circuit"
@@ -136,7 +137,7 @@ func (s *Synthesizer) calcControlBitWeight(desiredState circuit.TruthTable, tt c
 		}
 	}
 
-	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
+	return math.Pow(pheromonesSum, s.conf.Alpha) + math.Pow(float64(bestComplexity), s.conf.Beta)
 }
 
 func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable,
@@ -191,7 +192,7 @@ func (s *Synthesizer) calcGateTypeWeight(desiredState circuit.TruthTable, tt cir
 		}
 	}
 
-	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
+	return math.Pow(pheromonesSum, s.conf.Alpha) + math.Pow(float64(bestComplexity), s.conf.Beta)
 }
 
 func (s *Synthesizer) selectGateType(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.GateFactory {

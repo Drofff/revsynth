@@ -17,7 +17,7 @@ func main() {
 		NumOfAnts:       20,
 		NumOfIterations: 30,
 		Alpha:           1,
-		Beta:            1,
+		Beta:            -1,
 		EvaporationRate: 0.4,
 		DepositStrength: 100,
 
