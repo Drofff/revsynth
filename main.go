@@ -16,15 +16,15 @@ func main() {
 	conf := aco.Config{
 		NumOfAnts:       20,
 		NumOfIterations: 30,
-		Alpha:           2.0,
-		Beta:            1.5,
+		Alpha:           1,
+		Beta:            1,
 		EvaporationRate: 0.4,
 		DepositStrength: 100,
 
 		LocalLoops:  20,
 		SearchDepth: 10,
 	}
-	synth := aco.NewSynthesizer(conf, []circuit.GateFactory{circuit.NewFredkinGateFactory()}, logging.NewLogger(logging.LevelInfo))
+	synth := aco.NewSynthesizer(conf, []circuit.GateFactory{circuit.NewToffoliGateFactory()}, logging.NewLogger(logging.LevelInfo))
 
 	fmt.Println("Running synthesis..")
 	startedAt := time.Now().UnixMilli()
