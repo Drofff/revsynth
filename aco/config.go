@@ -21,4 +21,13 @@ type Config struct {
 	// in the synthesised circuit. Defaults to all values. It is recommended to follow the default
 	// unless a custom list is really needed.
 	AllowedControlBitValues []int
+
+	// UseVisibilityExplorer:
+	//
+	// - If set to `true`, visibility will be taken from all possible applications of the considered
+	//   bits computed as the visibility area
+	//
+	// - If set to `false`, only known applications of the bits from the pheromones graph will be taken
+	//   into consideration. This approach appears to be far more effective in the tested use-cases
+	UseVisibilityExplorer bool
 }

@@ -54,28 +54,45 @@ func (s *Synthesizer) calcTargetBitWeight(desiredState circuit.TruthTable, tt ci
 	pheromones Pheromones, tb int, gf circuit.GateFactory) float64 {
 
 	pheromonesSum := 0.0
-	for _, pheromone := range pheromones {
-		if pheromone.FromState.Equal(tt) && utils.ContainsInt(pheromone.UsedGate.TargetBits(), tb) {
-			pheromonesSum += pheromone.PheromoneAmount
-		}
-	}
-
 	bestComplexity := 0
 	setComplexity := false
 
-	visibilities := exploreVisibility(tt, desiredState, gf)
-	for _, vis := range visibilities {
-		if utils.ContainsInt(vis.targetBits, tb) {
-			if !setComplexity {
-				bestComplexity = vis.distance
-				setComplexity = true
-			} else if vis.distance < bestComplexity {
-				bestComplexity = vis.distance
+	for _, pheromone := range pheromones {
+		if pheromone.FromState.Equal(tt) && utils.ContainsInt(pheromone.UsedGate.TargetBits(), tb) {
+			pheromonesSum += pheromone.PheromoneAmount
+
+			if !s.conf.UseVisibilityExplorer {
+				complexity := CalcComplexity(pheromone.ToState, desiredState)
+				if !setComplexity {
+					bestComplexity = complexity
+					setComplexity = true
+				} else if complexity < bestComplexity {
+					bestComplexity = complexity
+				}
 			}
 		}
 	}
 
-	return pheromonesSum*s.conf.Alpha + float64(bestComplexity)*s.conf.Beta
+	if s.conf.UseVisibilityExplorer {
+		visibilities := exploreVisibility(tt, desiredState, gf)
+		for _, vis := range visibilities {
+			if utils.ContainsInt(vis.targetBits, tb) {
+				if !setComplexity {
+					bestComplexity = vis.distance
+					setComplexity = true
+				} else if vis.distance < bestComplexity {
+					bestComplexity = vis.distance
+				}
+			}
+		}
+	}
+
+	dist := 0.0
+	if bestComplexity > 0 {
+		dist = math.Pow(float64(bestComplexity), s.conf.Beta)
+	}
+
+	return math.Pow(pheromonesSum, s.conf.Alpha) + dist
 }
 
 func (s *Synthesizer) selectTargetBits(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones, gf circuit.GateFactory) []int {
@@ -116,28 +133,45 @@ func (s *Synthesizer) calcControlBitWeight(desiredState circuit.TruthTable, tt c
 	pheromones Pheromones, tb []int, cb int, cbValue int, gf circuit.GateFactory) float64 {
 
 	pheromonesSum := 0.0
-	for _, pheromone := range pheromones {
-		if pheromone.FromState.Equal(tt) && haveSameElements(pheromone.UsedGate.TargetBits(), tb) && pheromone.UsedGate.ControlBits()[cb] == cbValue {
-			pheromonesSum += pheromone.PheromoneAmount
-		}
-	}
-
 	bestComplexity := 0
 	setComplexity := false
 
-	visibilities := exploreVisibility(tt, desiredState, gf)
-	for _, vis := range visibilities {
-		if haveSameElements(vis.targetBits, tb) && vis.controlBits[cb] == cbValue {
-			if !setComplexity {
-				bestComplexity = vis.distance
-				setComplexity = true
-			} else if vis.distance < bestComplexity {
-				bestComplexity = vis.distance
+	for _, pheromone := range pheromones {
+		if pheromone.FromState.Equal(tt) && haveSameElements(pheromone.UsedGate.TargetBits(), tb) && pheromone.UsedGate.ControlBits()[cb] == cbValue {
+			pheromonesSum += pheromone.PheromoneAmount
+
+			if !s.conf.UseVisibilityExplorer {
+				complexity := CalcComplexity(pheromone.ToState, desiredState)
+				if !setComplexity {
+					bestComplexity = complexity
+					setComplexity = true
+				} else if complexity < bestComplexity {
+					bestComplexity = complexity
+				}
 			}
 		}
 	}
 
-	return math.Pow(pheromonesSum, s.conf.Alpha) + math.Pow(float64(bestComplexity), s.conf.Beta)
+	if s.conf.UseVisibilityExplorer {
+		visibilities := exploreVisibility(tt, desiredState, gf)
+		for _, vis := range visibilities {
+			if haveSameElements(vis.targetBits, tb) && vis.controlBits[cb] == cbValue {
+				if !setComplexity {
+					bestComplexity = vis.distance
+					setComplexity = true
+				} else if vis.distance < bestComplexity {
+					bestComplexity = vis.distance
+				}
+			}
+		}
+	}
+
+	dist := 0.0
+	if bestComplexity > 0 {
+		dist = math.Pow(float64(bestComplexity), s.conf.Beta)
+	}
+
+	return math.Pow(pheromonesSum, s.conf.Alpha) + dist
 }
 
 func (s *Synthesizer) selectControlBits(desiredState circuit.TruthTable, tt circuit.TruthTable,
@@ -192,7 +226,12 @@ func (s *Synthesizer) calcGateTypeWeight(desiredState circuit.TruthTable, tt cir
 		}
 	}
 
-	return math.Pow(pheromonesSum, s.conf.Alpha) + math.Pow(float64(bestComplexity), s.conf.Beta)
+	dist := 0.0
+	if bestComplexity > 0 {
+		dist = math.Pow(float64(bestComplexity), s.conf.Beta)
+	}
+
+	return math.Pow(pheromonesSum, s.conf.Alpha) + dist
 }
 
 func (s *Synthesizer) selectGateType(desiredState circuit.TruthTable, tt circuit.TruthTable, pheromones Pheromones) circuit.GateFactory {

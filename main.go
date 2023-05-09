@@ -14,26 +14,32 @@ const pheromonesOutputFile = "pheromones.gv"
 
 func main() {
 	conf := aco.Config{
-		NumOfAnts:       20,
-		NumOfIterations: 30,
-		Alpha:           1,
+		NumOfAnts:       35,
+		NumOfIterations: 20,
+		Alpha:           3.0,
 		Beta:            -1,
 		EvaporationRate: 0.4,
 		DepositStrength: 100,
 
-		LocalLoops:  20,
-		SearchDepth: 10,
+		LocalLoops:  7,
+		SearchDepth: 8,
 	}
-	synth := aco.NewSynthesizer(conf, []circuit.GateFactory{circuit.NewToffoliGateFactory()}, logging.NewLogger(logging.LevelInfo))
+	synth := aco.NewSynthesizer(conf,
+		[]circuit.GateFactory{circuit.NewToffoliGateFactory()},
+		logging.NewLogger(logging.LevelInfo))
 
 	fmt.Println("Running synthesis..")
 	startedAt := time.Now().UnixMilli()
 	desiredVector := circuit.TruthVector{Inputs: [][]int{
-		{0, 0, 0, 1},
-		{0, 1, 0, 1},
-		{1, 0, 0, 1},
-		{1, 1, 0, 1},
-	}, Vector: []int{0, 2, 2, 1}, AdditionalLinesMask: []int{1, 1, 0, 0}}
+		{0, 0, 0},
+		{0, 0, 1},
+		{0, 1, 0},
+		{0, 1, 1},
+		{1, 0, 0},
+		{1, 0, 1},
+		{1, 1, 0},
+		{1, 1, 1},
+	}, Vector: []int{2, 6, 0, 5, 7, 3, 4, 1}, AdditionalLinesMask: []int{}}
 	res := synth.Synthesise(desiredVector)
 
 	processingTime := time.Now().UnixMilli() - startedAt
